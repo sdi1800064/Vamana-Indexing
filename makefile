@@ -34,7 +34,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 
 # Clean rule to remove object files and executable
 clean:
-	rm -rf $(OBJ_DIR)/*.o $(EXEC)
+	rm -rf $(OBJ_DIR)/*.o $(EXEC) output.txt
 
 # Phony targets
 .PHONY: all clean

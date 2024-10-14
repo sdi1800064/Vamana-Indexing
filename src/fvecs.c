@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "../headers/fvecs.h"
 
-// Function to read an fvecs file
+// Function to read an fvecs or an ivecs file
 void read_fvecs(const char* filename, float*** vectors, int* num_vectors, int* dimension) {
     FILE* file = fopen(filename, "rb");
     if (!file) {
@@ -17,11 +17,9 @@ void read_fvecs(const char* filename, float*** vectors, int* num_vectors, int* d
 
     // Read the first 4 bytes to get the dimensionality (d)
     fread(dimension, sizeof(int), 1, file);
-    printf("Vector dimensionality: %d\n", *dimension);
 
     // Calculate the number of vectors
     *num_vectors = file_size / ((*dimension + 1) * sizeof(float));
-    printf("Number of vectors: %d\n", *num_vectors);
 
     // Allocate memory for the vectors
     *vectors = (float**)malloc((*num_vectors) * sizeof(float*));
