@@ -77,7 +77,8 @@ int main() {
     printf("Creating the random graph...\n");
     Graph *base_graph = create_random_graph(base_vectors, base_num_dimensions, 20, base_num_vectors);
 
-    fprint_graph(base_graph, base_num_vectors, outputfd);
+    //============== UNCOMMENT THIS TO PRINT THE RANDOM GRAPH =================//
+    // fprint_graph(base_graph, base_num_vectors, outputfd);
     
     int *V;                     // V - Visited List
     int L = 10;                 // L - max number of candidates
@@ -109,16 +110,32 @@ int main() {
     printf("V_size before entering GreedySearch: %d\n", V_size);
     GreedySearch(base_graph, base_num_dimensions, &V, &V_size, l, L, query_vectors[query_index], k, start_index);
 
-    printf("Printing V and l...\n");
-    for( int i = 0; i < V_size; i++){
-        printf("%d ", V[i]);
+    // printf("Printing V and l...\n");
+    // for( int i = 0; i < V_size; i++){
+    //     printf("%d ", V[i]);
+    // }
+    // printf("\n");
+    fprintf(outputfd, "V: \n");
+    for (int i = 0; i < V_size; i++) {
+        fprintf(outputfd, "%d,", V[i]);
     }
-    printf("\n");
+    fprintf(outputfd, "\n");
+
+    printf("Printing L closest to Xq...\n");
+    fprintf(outputfd,"Printing L closest to Xq...\n");
+    fprintf(outputfd, "Xq: ");
+    for (int i = 0; i < base_num_dimensions; i++) {
+        fprintf(outputfd, "%.1f ", query_vectors[query_index][i]);
+    }
+    fprintf(outputfd, "\n");
 
     for (int i = 0; i < k; i++) {
-        printf("%d ", l[i]);       
+        fprintf(outputfd, "%d: ", l[i]);
+        for (int j = 0; j < base_num_dimensions; j++){
+            fprintf(outputfd, "%.1f ", base_graph->points[l[i]].coordinates[j]);
+        }
+        fprintf(outputfd, "\n");
     }
-    printf("\n");
 
     printf("Exiting the program..\n");
 

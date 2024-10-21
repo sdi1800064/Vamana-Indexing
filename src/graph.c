@@ -74,7 +74,6 @@ void add_random_edges(Graph* graph, int max_edges, int base_num_vectors) {
         
         for (int j = 0; j < temp_edge_count; j++) {
             int random_index;
-            
             do {
                 random_index = rand() % base_num_vectors; // Random point to connect to
             } while (random_index == i); // Avoid self-loop
@@ -227,6 +226,7 @@ void insert_l_closest(int *l, float *distances, int new_node, float new_distance
 
 // After GreedySearch, find L closest nodes from visited V to Xq
 void find_L_closest(int *V, int V_size, int *l, int L, float *Xq, Graph *graph, int dimensions) {
+    printf("Finding %d closest nodes out of %d..\n", L, V_size);
     float *distances = (float *)malloc(L * sizeof(float));
     for (int i = 0; i < L; i++) distances[i] = FLT_MAX; // Initialize distances with a large value
 
@@ -271,26 +271,26 @@ void GreedySearch(Graph *graph, const int dimensions, int **V, int *V_size, int 
         // Look at neighbors of the current node
         Point *p = &graph->points[current_node];
 
-        printf("Node %d has %d edges\n", current_node, p->edge_count);
-        for (int i = 0; i < p->edge_count; i++) {
-            printf(" %d\n", p->edges[i].to);
-        }
-        printf("\n");
-        printf(" V_size: %d, V: ", *V_size);
-            for (int j = 0; j < *V_size; j++) {
-                printf(" %d,", (*V)[j]);
-            }
-            printf("\n");
+        // printf("Node %d has %d edges\n", current_node, p->edge_count);
+        // for (int i = 0; i < p->edge_count; i++) {
+        //     printf(" %d\n", p->edges[i].to);
+        // }
+        // printf("\n");
+        // printf(" V_size: %d, V: ", *V_size);
+        // for (int j = 0; j < *V_size; j++) {
+        //     printf(" %d,", (*V)[j]);
+        // }
+        // printf("\n");
         for (int i = 0; i < p->edge_count; i++) {
             
             int neighbor = p->edges[i].to;
-            // printf("Checking neighbor %d\n", neighbor); 
+            printf("Checking neighbor %d\n", neighbor); 
             printf(" V_size: %d, V: ", *V_size);
-            for (int j = 0; j < *V_size; j++) {
-                printf(" %d,", (*V)[j]);
-            }
+            // for (int j = 0; j < *V_size; j++) {
+            //     printf(" %d,", (*V)[j]);
+            // }
             printf("\n");
-            if (!V_contains(V, *V_size, neighbor)) {
+            if (!V_contains(*V, *V_size, neighbor)) {
                 printf("Calculating distance to neighbor %d\n", neighbor);
                 float dist = squared_euclidean_distance(graph->points[neighbor].coordinates, Xq, dimensions);
                 if (dist < min_distance) {
@@ -327,10 +327,10 @@ void GreedySearch(Graph *graph, const int dimensions, int **V, int *V_size, int 
 }
 
 // Check if node is in visited array
-int V_contains(int **V, int V_size, int node) {
+int V_contains(int *V, int V_size, int node) {
     printf("Checking if %d is in V..\n", node);
     for (int i = 0; i < V_size; i++) {
-        if (*(V)[i] == node) {
+        if (V[i] == node) {
             printf("Found %d in V\n", node);
             return 1;
         }

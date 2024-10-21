@@ -6,15 +6,14 @@
 
 
 // Function to calculate squared Euclidean distance between two vectors
-double squared_euclidean_distance(float *v1, float *v2, int dim) {
-    printf("Calculating squared Euclidean distance between vectors %p and %p\n", v1, v2);
-    double dist = 0.0;
-    for (int i = 0; i < dim; i++) {
-        double diff = v1[i] - v2[i];
-        dist += diff * diff;
+double squared_euclidean_distance(float *p, float *q, int n) {
+    // printf("Coordinates located at %d and point %d\n", &p, &q);
+    float sum = 0.0f;
+    for (int i = 0; i < n; i++) {
+        float diff = p[i] - q[i];  // Calculate the difference
+        sum += diff * diff;        // Square the difference and add to sum
     }
-    printf("Squared Euclidean distance: %f\n", dist);
-    return dist;
+    return sqrtf(sum);  // Use sqrtf for floats
 }
 
 // Function to compare two neighbors (used for sorting)
