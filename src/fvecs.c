@@ -46,3 +46,13 @@ void read_fvecs(const char* filename, float*** vectors, int* num_vectors, int* d
 
     fclose(file);
 }
+
+void fprintFloatVectors(float** vectors, int num_vectors, int dimension, FILE *outputfd) {
+    for (int i = 0; i < num_vectors; i++) {
+        fprintf(outputfd, "Point %d: ", i);
+        for (int j = 0; j < dimension; j++) {
+            fprintf(outputfd, "%.1f ", vectors[i][j]);
+        }
+        fprintf(outputfd, "\n");
+    }
+}

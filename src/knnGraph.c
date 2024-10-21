@@ -7,11 +7,13 @@
 
 // Function to calculate squared Euclidean distance between two vectors
 double squared_euclidean_distance(float *v1, float *v2, int dim) {
+    printf("Calculating squared Euclidean distance between vectors %p and %p\n", v1, v2);
     double dist = 0.0;
     for (int i = 0; i < dim; i++) {
         double diff = v1[i] - v2[i];
         dist += diff * diff;
     }
+    printf("Squared Euclidean distance: %f\n", dist);
     return dist;
 }
 
@@ -25,7 +27,7 @@ int compare_neighbors(const void *a, const void *b) {
 }
 
 // Function to find the K nearest neighbors of a given vector
-void find_k_nearest_neighbors(float **vectors, int num_vectors, int dim, int vector_idx, Neighbor neighbors[]) {
+void bf_find_k_nearest_neighbors(float **vectors, int num_vectors, int dim, int vector_idx, Neighbor neighbors[]) {
     // Calculate distances from vector_idx to all other vectors
     for (int i = 0; i < num_vectors; i++) {
         if (i == vector_idx) {
@@ -41,14 +43,14 @@ void find_k_nearest_neighbors(float **vectors, int num_vectors, int dim, int vec
 }
 
 // Function to build the KNN graph
-void build_knn_graph(int **knn_graph, float **vectors, int num_vectors, int dim, int k, FILE *outputfd) {
+void bf_build_knn_graph(int **knn_graph, float **vectors, int num_vectors, int dim, int k, FILE *outputfd) {
     Neighbor *neighbors = (Neighbor *)malloc(num_vectors * sizeof(Neighbor));
 
 
     fprintf(outputfd, "%d-Nearest Neighbors for the each vector : \n", k);
     // For each vector, find the K nearest neighbors
     for (int i = 0; i < num_vectors; i++) {
-        find_k_nearest_neighbors(vectors, num_vectors, dim, i, neighbors);
+        bf_find_k_nearest_neighbors(vectors, num_vectors, dim, i, neighbors);
 
         // Store the indices of the K nearest neighbors in the graph
         for (int j = 0; j < k; j++) {
@@ -63,7 +65,7 @@ void build_knn_graph(int **knn_graph, float **vectors, int num_vectors, int dim,
 }
 
 // Function to find K nearest neighbors of a given coordinate
-void find_k_nearest_neighbors_for_point(float **vectors, int num_vectors, int dim, float *query_point, int k, int **knn_graph) {
+void bf_find_k_nearest_neighbors_for_point(float **vectors, int num_vectors, int dim, float *query_point, int k, int **knn_graph) {
     // Array to hold distances
     double *distances = (double *)malloc(num_vectors * sizeof(double));
     int *indices = (int *)malloc(num_vectors * sizeof(int));
