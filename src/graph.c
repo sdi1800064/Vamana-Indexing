@@ -341,7 +341,6 @@ void GreedySearch(Graph *graph, const int dimensions, int **V, int *V_size, int 
                 }
             }
         }
-        printf("Closest neighbor of node %d: %d\n", current_node, closest_node);
 
         // If no more neighbors to explore, stop search
         if (closest_node == -1) {

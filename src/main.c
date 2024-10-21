@@ -64,6 +64,7 @@ int main() {
     fprintf(outputfd, "Query-Vector dimensionality: %d\n", query_num_dimensions);
     fprintf(outputfd, "Number of query-Vectorts: %d\n", query_num_vectors);
 
+    //============== UNCOMMENT THIS TO PRINT THE QUERY POINTS =================//
     // printf("Printing query vector...\n");
     // fprintFloatVectors(query_vectors, query_num_vectors, query_num_dimensions, outputfd);
 
@@ -76,17 +77,20 @@ int main() {
     Graph *base_graph = create_random_graph(base_vectors, base_num_dimensions, 20, base_num_vectors);
 
     //============== UNCOMMENT THIS TO PRINT THE RANDOM GRAPH =================//
-    fprint_graph(base_graph, base_num_vectors, outputfd);
+    // fprint_graph(base_graph, base_num_vectors, outputfd);
     
     int *V;                     // V - Visited List
-    int L = 10;                 // L - max number of candidates
-    int R = 5;                  // R - max radius for RobustPrune
     int V_size = 0;             // V_size - Size of V
     int start_index = 0;        // Start point
     int query_index = 40;       // Query point < query_vectors
-    float a = 1;                // a - RobustPrune
     int *l;                     // L~ - k nearest neighbors list
+
+    // Inserted by the user
+    int L = 10;                 // L - max number of candidates
+    int R = 5;                  // R - max radius for RobustPrune
+    float a = 1;                // a - RobustPrune
     int k = 4;                  // k - number of nearest neighbor
+
 
 
     // Allocate memory for V
@@ -105,6 +109,12 @@ int main() {
     printf("Memory allocated\n");
 
     GreedySearch(base_graph, base_num_dimensions, &V, &V_size, l, L, query_vectors[query_index], k, start_index);
+
+    printf("Query coordinates : \n");
+    for (int i = 0; i < base_num_dimensions; i++) {
+        printf("%.1f ", query_vectors[query_index][i]);
+    }
+    printf("\n");
 
     fprintf(outputfd, "Visited %d nodes: \n", V_size);
     for (int i = 0; i < V_size; i++) {
