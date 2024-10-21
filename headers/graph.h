@@ -38,6 +38,7 @@ int V_contains(int *V, int V_size, int node);
 void greedy_search(Graph* graph, int base_num_vectors, int base_num_dimensions, int start_index, int query_index, int k, int L, int **V, int *V_size, int *l);
 void add_candidate(int* candidate_list, int* candidate_count, int candidate_index);
 void prune_V(Graph* graph, int** V, int* V_size, int base_num_dimensions, int L, int query_index);
+double squared_euclidean_distance(float *p, float *q, int n);
 
 
 #endif

@@ -2,7 +2,6 @@
 #include <stdlib.h>
 
 #include "../headers/fvecs.h"
-#include "../headers/knnGraph.h"
 #include "../headers/graph.h"
 
 #define BASE_FILENAME "testSets/siftsmall/siftsmall_base.fvecs"
@@ -74,11 +73,10 @@ int main() {
     fprintf(outputfd, "Number of Groundtruth-Vectorts: %d\n", groundtruth_num_vectors);
 
 
-    printf("Creating the random graph...\n");
     Graph *base_graph = create_random_graph(base_vectors, base_num_dimensions, 20, base_num_vectors);
 
     //============== UNCOMMENT THIS TO PRINT THE RANDOM GRAPH =================//
-    // fprint_graph(base_graph, base_num_vectors, outputfd);
+    fprint_graph(base_graph, base_num_vectors, outputfd);
     
     int *V;                     // V - Visited List
     int L = 10;                 // L - max number of candidates
@@ -91,7 +89,6 @@ int main() {
     int k = 4;                  // k - number of nearest neighbor
 
 
-    printf("Allocating memory for V and l...\n");
     // Allocate memory for V
     V = (int*)malloc((V_size + 1) * sizeof(int));
     if (!V) {
@@ -107,15 +104,9 @@ int main() {
     }
     printf("Memory allocated\n");
 
-    printf("V_size before entering GreedySearch: %d\n", V_size);
     GreedySearch(base_graph, base_num_dimensions, &V, &V_size, l, L, query_vectors[query_index], k, start_index);
 
-    // printf("Printing V and l...\n");
-    // for( int i = 0; i < V_size; i++){
-    //     printf("%d ", V[i]);
-    // }
-    // printf("\n");
-    fprintf(outputfd, "V: \n");
+    fprintf(outputfd, "Visited %d nodes: \n", V_size);
     for (int i = 0; i < V_size; i++) {
         fprintf(outputfd, "%d,", V[i]);
     }

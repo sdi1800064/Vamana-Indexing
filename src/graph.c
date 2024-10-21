@@ -4,8 +4,18 @@
 #include <float.h>
 
 #include "../headers/graph.h"
-#include "../headers/knnGraph.h"
 
+
+/**
+ * Creates a random graph with the given number of vectors and dimensions
+ * and random edges within the given maximum number of edges per point.
+ * 
+ * @param base_vectors The 2D array of vectors to use as points in the graph
+ * @param base_num_dimensions The number of dimensions of each vector
+ * @param max_edges The maximum number of edges each point can have
+ * @param base_num_vectors The number of vectors in the graph
+ * @return A pointer to the created graph
+ */
 Graph* create_random_graph(float **base_vectors, int base_num_dimensions, int max_edges, int base_num_vectors) {
     Graph* graph = (Graph*)malloc(sizeof(Graph));
     
@@ -65,22 +75,26 @@ Graph* create_random_graph(float **base_vectors, int base_num_dimensions, int ma
     return graph;
 }
 
-// Function to randomly connect points with edges
+/**
+ * Function to randomly connect points with edges
+ * 
+ * @param graph The graph to add edges to
+ * @param max_edges The maximum number of edges a point can have
+ * @param base_num_vectors The number of vectors in the graph
+ */
 void add_random_edges(Graph* graph, int max_edges, int base_num_vectors) {
     printf("Adding random edges..\n");
     for (int i = 0; i < base_num_vectors; i++) {
-        int temp_edge_count = rand() % (max_edges + 1) + 1; // Random number of edges (0 to max_edges)
-        // printf("Point %d will have %d edges\n", i, temp_edge_count);
-        
-        for (int j = 0; j < temp_edge_count; j++) {
+        for (int j = 0; j < max_edges; j++) {
             int random_index;
             do {
-                random_index = rand() % base_num_vectors; // Random point to connect to
+                // Generate a random index of a point to connect to
+                random_index = rand() % base_num_vectors;
             } while (random_index == i); // Avoid self-loop
             // printf("Connecting point %d to point %d\n", i, random_index);
 
             // Add the edge if there is space
-            if (graph->points[i].edge_count < temp_edge_count) {
+            if ((graph->points[i].edge_count + 1) < max_edges) {
                 graph->points[i].edges[graph->points[i].edge_count].to = random_index;
                 graph->points[i].edge_count++;
             }
@@ -91,11 +105,22 @@ void add_random_edges(Graph* graph, int max_edges, int base_num_vectors) {
     printf("Edges added\n");
 }
 
-// Function to print the graph for debugging
+/**
+ * Function to print the graph coordinates for debugging
+ * 
+ * @param graph The graph to print
+ * @param base_num_vectors The number of vectors in the graph
+ * @param base_num_coordinates The number of coordinates per vector
+ * @param outputfd The file descriptor to write to
+ */
 void fprint_graph_coordinates(Graph* graph, int base_num_vectors, int base_num_coordinates, FILE *outputfd) {
-    printf("Printing graph..\n");
+    printf("Printing graph coordinates..\n");
+    
+    // Iterate over each point in the graph
     for (int i = 0; i < base_num_vectors; i++) {
         Point p = graph->points[i];
+        
+        // Print the coordinates of the current point
         fprintf(outputfd, "Point %d: ( ", p.index);
         for(int j = 0; j < base_num_coordinates; j++) {
             if (j == base_num_coordinates - 1) {
@@ -104,16 +129,22 @@ void fprint_graph_coordinates(Graph* graph, int base_num_vectors, int base_num_c
             }
             fprintf(outputfd, "%.2f, ", p.coordinates[j]);
         }
-        fprintf(outputfd, " Point %d edges: ", p.index);
         
+        // Print the edges of the current point
+        fprintf(outputfd, " Point %d edges: ", p.index);
         for (int j = 0; j < p.edge_count; j++) {
             fprintf(outputfd, "%d ", p.edges[j].to);
         }
         fprintf(outputfd, "\n");
     }
-    printf("Printing done\n");
 }
 
+/**
+ * Prints the edges of the graph for debugging
+ * @param graph The graph to print
+ * @param base_num_vectors The number of vectors in the graph
+ * @param outputfd The file descriptor to write to
+ */
 void fprint_graph(Graph* graph, int base_num_vectors, FILE *outputfd) {
     printf("Printing graph..\n");
     for (int i = 0; i < base_num_vectors; i++) {
@@ -125,7 +156,6 @@ void fprint_graph(Graph* graph, int base_num_vectors, FILE *outputfd) {
         }
         fprintf(outputfd, "\n");
     }
-    printf("Printing done\n");
 }
 
 // Function to perform RobustPrune on a point in the graph
@@ -208,7 +238,15 @@ void robust_prune(Graph* graph, int point_index, int *V, int *V_size, float a, i
 }
 
 
-// Insert into sorted list l, keeping L closest nodes
+/**
+ * Inserts a new node into the sorted list l, keeping L closest nodes
+ * 
+ * @param l The sorted list of node indices
+ * @param distances The corresponding distances of the nodes in l
+ * @param new_node The index of the new node to insert
+ * @param new_distance The distance of the new node
+ * @param L The number of nodes to keep in the list
+ */
 void insert_l_closest(int *l, float *distances, int new_node, float new_distance, int L) {
     int i = L - 1;
     while (i >= 0 && distances[i] > new_distance) {
@@ -224,12 +262,23 @@ void insert_l_closest(int *l, float *distances, int new_node, float new_distance
     }
 }
 
-// After GreedySearch, find L closest nodes from visited V to Xq
+/**
+ * After GreedySearch, find L closest nodes from visited V to Xq.
+ *
+ * @param V The set of visited nodes
+ * @param V_size The size of the set
+ * @param l The sorted list of node indices
+ * @param L The number of nodes to keep in the list
+ * @param Xq The query vector
+ * @param graph The graph
+ * @param dimensions The number of dimensions
+ */
 void find_L_closest(int *V, int V_size, int *l, int L, float *Xq, Graph *graph, int dimensions) {
-    printf("Finding %d closest nodes out of %d..\n", L, V_size);
+    // Initialize distances with a large value
     float *distances = (float *)malloc(L * sizeof(float));
-    for (int i = 0; i < L; i++) distances[i] = FLT_MAX; // Initialize distances with a large value
+    for (int i = 0; i < L; i++) distances[i] = FLT_MAX;
 
+    // Iterate over the visited nodes and find L closest nodes
     for (int i = 0; i < V_size; i++) {
         int node = V[i];
         float dist = (float)squared_euclidean_distance(graph->points[node].coordinates, Xq, dimensions);
@@ -240,6 +289,19 @@ void find_L_closest(int *V, int V_size, int *l, int L, float *Xq, Graph *graph, 
 }
 
 // Greedy search algorithm with logging for debugging
+/**
+ * @brief Greedy search algorithm with logging for debugging
+ * 
+ * @param graph The graph to search
+ * @param dimensions The number of dimensions in the graph
+ * @param V The set of visited nodes
+ * @param V_size The size of the set
+ * @param l The sorted list of node indices
+ * @param L The number of nodes to keep in the list
+ * @param Xq The query vector
+ * @param k The number of neighbors to consider
+ * @param Xs The starting node
+ */
 void GreedySearch(Graph *graph, const int dimensions, int **V, int *V_size, int *l, const int L, float *Xq, const int k, const int Xs) {
     
     if (graph == NULL || V == NULL || *V == NULL || V_size == NULL || l == NULL || Xq == NULL) {
@@ -251,7 +313,6 @@ void GreedySearch(Graph *graph, const int dimensions, int **V, int *V_size, int 
 
     (*V)[*V_size] = Xs;  // Start search from Xs
     (*V_size)++;
-    printf("Added starting node Xs to visited nodes V\n");
 
     // Reallocate memory for V
     *V = realloc(*V, ((*V_size) + 1) * sizeof(int));
@@ -264,41 +325,21 @@ void GreedySearch(Graph *graph, const int dimensions, int **V, int *V_size, int 
     
     // Perform greedy search
     while (1) {
-        printf("Current node: %d\n", current_node);
         float min_distance = FLT_MAX;
         int closest_node = -1;
 
         // Look at neighbors of the current node
         Point *p = &graph->points[current_node];
 
-        // printf("Node %d has %d edges\n", current_node, p->edge_count);
-        // for (int i = 0; i < p->edge_count; i++) {
-        //     printf(" %d\n", p->edges[i].to);
-        // }
-        // printf("\n");
-        // printf(" V_size: %d, V: ", *V_size);
-        // for (int j = 0; j < *V_size; j++) {
-        //     printf(" %d,", (*V)[j]);
-        // }
-        // printf("\n");
         for (int i = 0; i < p->edge_count; i++) {
-            
             int neighbor = p->edges[i].to;
-            printf("Checking neighbor %d\n", neighbor); 
-            printf(" V_size: %d, V: ", *V_size);
-            // for (int j = 0; j < *V_size; j++) {
-            //     printf(" %d,", (*V)[j]);
-            // }
-            printf("\n");
             if (!V_contains(*V, *V_size, neighbor)) {
-                printf("Calculating distance to neighbor %d\n", neighbor);
                 float dist = squared_euclidean_distance(graph->points[neighbor].coordinates, Xq, dimensions);
                 if (dist < min_distance) {
                     min_distance = dist;
                     closest_node = neighbor;
                 }
             }
-            printf("Checked neighbor %d\n", neighbor);
         }
         printf("Closest neighbor of node %d: %d\n", current_node, closest_node);
 
@@ -308,7 +349,6 @@ void GreedySearch(Graph *graph, const int dimensions, int **V, int *V_size, int 
             break;
         }
 
-
         // Add the closest neighbor to visited nodes V
         (*V)[*V_size] = closest_node;
         (*V_size)++;
@@ -317,7 +357,6 @@ void GreedySearch(Graph *graph, const int dimensions, int **V, int *V_size, int 
             printf("Error: Failed to allocate memory for V\n");
             exit(1);
         }
-        printf("Added closest neighbor %d to visited nodes V\n", closest_node);
         current_node = closest_node;  // Move to the next node
     }
 
@@ -326,15 +365,39 @@ void GreedySearch(Graph *graph, const int dimensions, int **V, int *V_size, int 
     printf("GreedySearch completed successfully\n");
 }
 
-// Check if node is in visited array
+/**
+ * Checks if a node is in the visited array V
+ * 
+ * @param V The visited array
+ * @param V_size The size of the array
+ * @param node The node to search for
+ * @return 1 if the node is in the array, 0 otherwise
+ */
 int V_contains(int *V, int V_size, int node) {
-    printf("Checking if %d is in V..\n", node);
+    // Iterate through the array and check if the node is present
     for (int i = 0; i < V_size; i++) {
         if (V[i] == node) {
-            printf("Found %d in V\n", node);
-            return 1;
+            return 1;  // Node found
         }
     }
-    printf("%d not found in V\n", node);
-    return 0;
+    return 0;  // Node not found
+}
+
+
+/**
+ * Calculates the squared Euclidean distance between two vectors of length n
+ * 
+ * @param p The first vector
+ * @param q The second vector
+ * @param n The length of the vectors
+ * @return The squared Euclidean distance between the two vectors
+ */
+double squared_euclidean_distance(float *p, float *q, int n) {
+    // Calculate the difference between the elements of the two vectors
+    float sum = 0.0f;
+    for (int i = 0; i < n; i++) {
+        float diff = p[i] - q[i];  // Calculate the difference
+        sum += diff * diff;        // Square the difference and add to sum
+    }
+    return sum;  // Return the squared Euclidean distance
 }
