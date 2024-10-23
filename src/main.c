@@ -1,14 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "../headers/fvecs.h"
 #include "../headers/graph.h"
 
-#define BASE_FILENAME "testSets/siftsmall/siftsmall_base.fvecs"
-#define QUERY_FILENAME "testSets/siftsmall/siftsmall_query.fvecs"
-#define GROUNDTRUTH_FILENAME "testSets/siftsmall/siftsmall_groundtruth.ivecs"
-
-int main() {
+int main(int argc, char *argv[]) {
     // Variables for Base file
     float** base_vectors;
     int base_num_vectors;
@@ -23,15 +20,50 @@ int main() {
     float** groundtruth_vectors;
     int groundtruth_num_vectors;
     int groundtruth_num_dimensions;
-
-    // Get Folder name
-
-    // Get user's Base-file
-
-    // Get user's Query-file
-
-    // Get user's GroundTruth
+    
     printf("Starting...\n");
+    // Initialize variables
+    char *base_file_name = NULL;
+    char *query_file_name = NULL;
+    char *groundtruth_file_name = NULL;
+    int k = -1;
+    int R = -1;
+    float a = -1.0;
+    int L = -1;
+
+    // Iterate through command line arguments
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-b") == 0 && i + 1 < argc) {
+            base_file_name = argv[i + 1];
+            i++;  // Move past the flag and value
+        } else if (strcmp(argv[i], "-q") == 0 && i + 1 < argc) {
+            query_file_name = argv[i + 1];
+            i++;
+        } else if (strcmp(argv[i], "-g") == 0 && i + 1 < argc) {
+            groundtruth_file_name = argv[i + 1];
+            i++;
+        } else if (strcmp(argv[i], "-k") == 0 && i + 1 < argc) {
+            k = atoi(argv[i + 1]);
+            i++;
+        } else if (strcmp(argv[i], "-R") == 0 && i + 1 < argc) {
+            R = atoi(argv[i + 1]);
+            i++;
+        } else if (strcmp(argv[i], "-a") == 0 && i + 1 < argc) {
+            a = atof(argv[i + 1]);
+            i++;
+        } else if (strcmp(argv[i], "-L") == 0 && i + 1 < argc) {
+            L = atof(argv[i + 1]);
+            i++;
+        }
+    }
+
+    // Check if all required arguments are provided
+    if (!base_file_name || !query_file_name || !groundtruth_file_name || k == -1 || R == -1 || a == -1.0) {
+        fprintf(stderr, "Error: Missing required arguments.\n");
+        fprintf(stderr, "Usage: %s -b base_file_name -q query_file_name -g groundtruth_file_name -k (int k) -R (int R) -a (float a) -L (float L)\n", argv[0]);
+        return 1;
+    }
+
 
     // Create an output file
     FILE *file_check = fopen("output.txt", "r");
@@ -55,12 +87,12 @@ int main() {
     }
 
     // Read the base_vectors from the file
-    read_fvecs(BASE_FILENAME, &base_vectors, &base_num_vectors, &base_num_dimensions);
+    read_fvecs(base_file_name, &base_vectors, &base_num_vectors, &base_num_dimensions);
     fprintf(outputfd, "Base-Vector dimensionality: %d\n", base_num_dimensions);
     fprintf(outputfd, "Number of Base-Vectorts: %d\n", base_num_vectors);
 
     // Read the query_vectors from the file
-    read_fvecs(QUERY_FILENAME, &query_vectors, &query_num_vectors, &query_num_dimensions);
+    read_fvecs(query_file_name, &query_vectors, &query_num_vectors, &query_num_dimensions);
     fprintf(outputfd, "Query-Vector dimensionality: %d\n", query_num_dimensions);
     fprintf(outputfd, "Number of query-Vectorts: %d\n", query_num_vectors);
 
@@ -69,12 +101,12 @@ int main() {
     // fprintFloatVectors(query_vectors, query_num_vectors, query_num_dimensions, outputfd);
 
     // Read the groundtruth_vectors from the file
-    read_fvecs(GROUNDTRUTH_FILENAME, &groundtruth_vectors, &groundtruth_num_vectors, &groundtruth_num_dimensions);
+    read_fvecs(groundtruth_file_name, &groundtruth_vectors, &groundtruth_num_vectors, &groundtruth_num_dimensions);
     fprintf(outputfd, "Groundtruth-Vector dimensionality: %d\n", groundtruth_num_dimensions);
     fprintf(outputfd, "Number of Groundtruth-Vectorts: %d\n", groundtruth_num_vectors);
 
 
-    Graph *base_graph = create_random_graph(base_vectors, base_num_dimensions, 20, base_num_vectors);
+    Graph *base_graph = create_random_graph(base_vectors, base_num_dimensions, R, base_num_vectors);
 
     //============== UNCOMMENT THIS TO PRINT THE RANDOM GRAPH =================//
     // fprint_graph(base_graph, base_num_vectors, outputfd);
@@ -82,15 +114,8 @@ int main() {
     int *V;                     // V - Visited List
     int V_size = 0;             // V_size - Size of V
     int start_index = 0;        // Start point
-    int query_index = 40;       // Query point < query_vectors
+    int query_index = 1;       // Query point < query_vectors
     int *l;                     // L~ - k nearest neighbors list
-
-    // Inserted by the user
-    int L = 10;                 // L - max number of candidates
-    int R = 5;                  // R - max radius for RobustPrune
-    float a = 1;                // a - RobustPrune
-    int k = 4;                  // k - number of nearest neighbor
-
 
 
     // Allocate memory for V
@@ -108,7 +133,7 @@ int main() {
     }
     printf("Memory allocated\n");
 
-    GreedySearch(base_graph, base_num_dimensions, &V, &V_size, l, L, query_vectors[query_index], k, start_index);
+    GreedySearch(base_graph, &V, &V_size, l, L, query_vectors[query_index], k, start_index);
 
     printf("Query coordinates : \n");
     for (int i = 0; i < base_num_dimensions; i++) {
