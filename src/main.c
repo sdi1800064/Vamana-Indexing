@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     int query_num_dimensions;
 
     // Variables for GroundTruth
-    float** groundtruth_vectors;
+    int** groundtruth_vectors;
     int groundtruth_num_vectors;
     int groundtruth_num_dimensions;
     
@@ -72,6 +72,10 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    if(L < k)  {
+        fprintf(stderr, "Error: L must be greater than k.\n");
+    }
+
 
     // Create an output file
     FILE *file_check = fopen("output.txt", "r");
@@ -80,7 +84,7 @@ int main(int argc, char *argv[]) {
         printf("Existing output.txt file found. Deleting...\n");
         fclose(file_check);
         if (remove("output.txt") == 0) {
-            printf("Existing output.txt file deleted successfully.\n");
+            printf("File deleted successfully.\n");
         } else {
             printf("Error: Could not delete existing output.txt file!\n");
             return 1;
@@ -109,119 +113,56 @@ int main(int argc, char *argv[]) {
     // fprintFloatVectors(query_vectors, query_num_vectors, query_num_dimensions, outputfd);
 
     // Read the groundtruth_vectors from the file
-    read_fvecs(groundtruth_file_name, &groundtruth_vectors, &groundtruth_num_vectors, &groundtruth_num_dimensions);
+    read_ivecs(groundtruth_file_name, &groundtruth_vectors, &groundtruth_num_vectors, &groundtruth_num_dimensions);
     fprintf(outputfd, "Groundtruth-Vector dimensionality: %d\n", groundtruth_num_dimensions);
     fprintf(outputfd, "Number of Groundtruth-Vectorts: %d\n", groundtruth_num_vectors);
-
-    
-    Graph *base_graph = create_random_graph(base_vectors, base_num_dimensions, R, base_num_vectors);
+    // fprintIntVectors(groundtruth_vectors, groundtruth_num_vectors, groundtruth_num_dimensions, outputfd);
 
 
-    //============== UNCOMMENT THIS TO PRINT THE RANDOM GRAPH =================//
-    printf("Printing random graph in output file...\n");
+    // ============== CREATING RANDOM GRAPH ================= //
+    Graph *base_graph = create_random_graph(base_vectors, 5, R, 20);
+
+
+    // ------ UNCOMMENT THIS TO PRINT THE RANDOM GRAPH ------ //
+    fprintf(outputfd, "Printing random graph in output file...\n");
     fprint_graph(base_graph, outputfd);
 
-    vamana_indexing(base_graph, k, L, a, R, outputfd);
-    
-    // int *V;                     // V - Visited List
-    // int V_size = 0;             // V_size - Size of V
-    // int start_index = -1;        // Start point
-    // int query_index = 1;       // Query point < query_vectors
-    // int *l;                     // L~ - k nearest neighbors list
+    printf("printed graph to the output file\n");
 
+    // ============== VAMANA INDEXING ================= //
+    vamana_indexing(base_graph, L, a, R, outputfd);
 
-    // // Allocate memory for V
-    // V = (int*)malloc((V_size + 1) * sizeof(int));
-    // if (!V) {
-    //     printf("Memory allocation of V failed!\n");
-    //     exit(1);
-    // }
+    float recall = 0.0;
+    int *K_CLOSEST[query_num_vectors];
+    int *V = NULL;
+    int V_size = 0;
 
-    // // L~ - L nearest neighbors to Xq list
-    // l = (int*)calloc(L, sizeof(int));
-    // if (!l) {
-    //     printf("Memory allocation of l failed!\n");
-    //     exit(1);
-    // }
+    printf("= Calculating recall..\n");
 
-    // printf("Memory allocated\n");
-    // printf("Calculating medoid..\n");
+    // How many of the k-returned are in the groundtruth
+    for(int i = 0; i < query_num_vectors; i++) {
+        int random_index = rand() % base_num_vectors;
+        K_CLOSEST[i] = (int*)malloc(L * sizeof(int));
+        K_CLOSEST[i] = greedy_search(base_graph, random_index, query_vectors[i], L, &V_size, &V);
+    }    
+    free(V);
 
-    // // Take a sample of 10% of the points
-    // int sample_num = base_graph->num_points / 10;
-    // int *sample_points_array;
+    for(int i = 0; i < query_num_vectors; i++) {
+        for(int j = 0; j < k; j++) {
+            int predicted_index = K_CLOSEST[i][j];
+            for(int l = 0; l < groundtruth_num_dimensions; l++) {
+                int groundtruth_index = groundtruth_vectors[i][l];
+                if(predicted_index == groundtruth_index) {
+                    recall += 1.0;
+                    break;
+                }
+            }
+        }
+    }
 
-    // sample_points_array = sample_points(base_graph->num_points, sample_num);
-
-    // // Calculate medoid
-    // start_index = calculate_medoid(base_graph, sample_points_array, sample_num);
-
-    // // Check if medoid was calculated
-    // if (start_index == -1) {
-    //     perror("Error calculating medoid");
-    //     exit(1);
-    // }
-
-    // printf("Medoid is %d\n", start_index);
-
-    // int random_graph_point = rand() % base_graph->num_points;
-
-    // // Greedy search
-    // printf("Starting greedy search for point %d...\n", random_graph_point);
-    // GreedySearch(base_graph, &V, &V_size, l, L, base_graph->points[random_graph_point].coordinates, 1, start_index);
-    // printf("Finished greedy search\n");
-
-    // // Print the visited list
-    // fprintf(outputfd, "Visited %d nodes: \n", V_size);
-    // for (int i = 0; i < V_size; i++) {
-    //     fprintf(outputfd, "%d,", V[i]);
-    // }
-    // fprintf(outputfd, "\n");
-
-    // // Print the random point edges
-    // printf("Random point: %d has %d edges before pruning :\n", random_graph_point, base_graph->points[random_graph_point].edge_count);
-    // for( int i = 0; i < base_graph->points[random_graph_point].edge_count; i++) {  
-    //         printf("%d ", base_graph->points[random_graph_point].edges[i]);
-    // }
-    // printf("\n");
-    
-    // // Prune the random point
-    // printf("Pruning point %d...\n", random_graph_point);
-    // robustPrune(base_graph, random_graph_point, V, V_size, a, R);
-    // printf("Finished pruning\n");
-
-    // printf("Random point: %d has %d edges after pruning :\n", random_graph_point, base_graph->points[random_graph_point].edge_count);
-    // for( int i = 0; i < base_graph->points[random_graph_point].edge_count; i++) {  
-    //         printf("%d ", base_graph->points[random_graph_point].edges[i]);
-    // }
-    // printf("\n");
-
-    // fprint_graph(base_graph, outputfd);
-
-    // printf("Query coordinates : \n");
-    // for (int i = 0; i < base_num_dimensions; i++) {
-    //     printf("%.1f ", query_vectors[query_index][i]);
-    // }
-    // printf("\n");
+    printf("Recall: %f\n", (recall / query_num_vectors));
 
     
-
-    // printf("Printing L closest to Xq...\n");
-    // fprintf(outputfd,"Printing L closest to Xq...\n");
-    // fprintf(outputfd, "Xq: ");
-    // for (int i = 0; i < base_num_dimensions; i++) {
-    //     fprintf(outputfd, "%.1f ", query_vectors[query_index][i]);
-    // }
-    // fprintf(outputfd, "\n");
-
-    // for (int i = 0; i < k; i++) {
-    //     fprintf(outputfd, "%d: ", l[i]);
-    //     for (int j = 0; j < base_num_dimensions; j++){
-    //         fprintf(outputfd, "%.1f ", base_graph->points[l[i]].coordinates[j]);
-    //     }
-    //     fprintf(outputfd, "\n");
-    // }
-
     printf("Exiting the program..\n");
 
     // Close the file

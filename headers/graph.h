@@ -43,16 +43,20 @@ int *get_the_difference(int *Lamda, int Lamda_size, int *V, int V_size, int *Lam
 void swap(int *a, int *b);
 void swap_float(float *a, float *b);
 void sort_array(Graph *graph, int *l_temp, int l_temp_size, float *Xq);
-void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_size, int **Lamda, int *Lamda_size, int L, int k);
-// void GreedySearch(Graph *graph, int **V, int *V_size, int *l, int L, float *Xq, int k, int Xs);
+void printArray(int *array, int array_size);
+int* greedy_search(Graph *graph, int start_index, float *Xq, int L, int *V_size, int **V);
+// void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_size, int **Lamda, int L, int k);
 int arrayContains(int *V, int V_size, int node);
+void add_to_dynamic_array(int **array, int *size, int element);
+
 
 int calculate_medoid(Graph *graph, int *sample_point_indexes, int num_sample_points);
 int* sample_points(int max, int num_sample_points);
 
 void check_for_duplicates(int *array, int size);
-void vamana_indexing(Graph *graph, int k, int L, float a, int R, FILE *outputfd);
+void vamana_indexing(Graph *graph, int L, float a, int R, FILE *outputfd);
 
+int* get_kclosest(int** kclosest, int num, int k);
 
 
 #endif
