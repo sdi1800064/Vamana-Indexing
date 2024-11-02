@@ -2,21 +2,19 @@
 #define GRAPH_H
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <math.h>
 
 #define INF 1e9         // A large number to represent "infinity"
 
-// Struct for a single edge
-typedef struct {
-    int to;  // Index of the point this edge connects to
-} Edge;
+
 
 // Struct for a single point
 typedef struct {
     int index;              // Index of the point
     float *coordinates;     // Vector coordinates
     int edge_count;         // Current number of Outgoing edges
-    Edge *edges;            // Array of Outgoing edges (connections to other points)
+    int *edges;            // Array of Outgoing edges (connections to other points)
 } Point;
 
 // Struct for the whole graph
@@ -39,8 +37,10 @@ void addEdge(Point *point, int toIndex);
 int edgeExists(Point *point, int toIndex);
 void robustPrune(Graph *graph, int p_index, int *V, int V_size, float a, int R);
 
-int exists_in_difference(int *Lamda, int Lamda_size, int *V, int V_size);
-int compare(const void *a, const void *b, void *param);
+int exists_in_difference(int *Lamda, int Lamda_size, bool *Visited);
+
+void swap(int *a, int *b);
+void swap_float(float *a, float *b);
 void sort_array(Graph *graph, int *l_temp, int l_temp_size, float *Xq);
 void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_size, int **Lamda, int *Lamda_size, int L, int k);
 // void GreedySearch(Graph *graph, int **V, int *V_size, int *l, int L, float *Xq, int k, int Xs);
@@ -49,6 +49,7 @@ int arrayContains(int *V, int V_size, int node);
 int calculate_medoid(Graph *graph, int *sample_point_indexes, int num_sample_points);
 int* sample_points(int max, int num_sample_points);
 
+void check_for_duplicates(int *array, int size);
 void vamana_indexing(Graph *graph, int k, int L, float a, int R, FILE *outputfd);
 
 

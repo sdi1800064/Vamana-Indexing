@@ -113,8 +113,8 @@ int main(int argc, char *argv[]) {
     fprintf(outputfd, "Groundtruth-Vector dimensionality: %d\n", groundtruth_num_dimensions);
     fprintf(outputfd, "Number of Groundtruth-Vectorts: %d\n", groundtruth_num_vectors);
 
-
-    Graph *base_graph = create_random_graph(base_vectors, base_num_dimensions, R, 100);
+    
+    Graph *base_graph = create_random_graph(base_vectors, base_num_dimensions, R, 500);
 
 
     //============== UNCOMMENT THIS TO PRINT THE RANDOM GRAPH =================//
