@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
+#include <stdbool.h>
 
 #include "../headers/graph.h"
 
@@ -13,10 +14,10 @@
  * @param base_vectors The 2D array of vectors to use as points in the graph
  * @param base_num_dimensions The number of dimensions of each vector
  * @param max_edges The maximum number of edges each point can have
- * @param base_num_vectors The number of vectors in the graph
+ * @param base_num_points The number of vectors in the graph
  * @return A pointer to the created graph
  */
-Graph* create_random_graph(float **base_vectors, int base_num_dimensions, int max_edges, int base_num_vectors) {
+Graph* create_random_graph(float **base_vectors, int base_num_dimensions, int max_edges, int base_num_points) {
     Graph* graph = (Graph*)malloc(sizeof(Graph));
     
     if (!graph) {
@@ -24,21 +25,21 @@ Graph* create_random_graph(float **base_vectors, int base_num_dimensions, int ma
         exit(1);
     }
 
-    graph->points = (Point*)malloc(base_num_vectors * sizeof(Point));
+    graph->points = (Point*)malloc(base_num_points * sizeof(Point));
 
     if (!graph->points) {
         printf("Memory allocation failed!\n");
         exit(1);
     }
 
-    graph->num_vectors = base_num_vectors;
+    graph->num_points = base_num_points;
     graph->num_dimensions = base_num_dimensions;
 
     // Create the graph
-    printf("Creating random graph with %d vectors and %d dimensions\n", base_num_vectors, base_num_dimensions);
+    printf("Creating random graph with %d vectors and %d dimensions\n", base_num_points, base_num_dimensions);
 
     // Initialize points with vector values
-    for (int i = 0; i < base_num_vectors; i++) {
+    for (int i = 0; i < base_num_points; i++) {
         graph->points[i].index = i;
 
         // Allocate memory for coordinates
@@ -71,7 +72,7 @@ Graph* create_random_graph(float **base_vectors, int base_num_dimensions, int ma
     
 
     printf("Freeing base vectors..\n");
-    for (int i = 0; i < base_num_vectors; i++) {
+    for (int i = 0; i < base_num_points; i++) {
         free(base_vectors[i]);
     }
     free(base_vectors);
@@ -85,21 +86,21 @@ Graph* create_random_graph(float **base_vectors, int base_num_dimensions, int ma
  * 
  * @param graph The graph to add edges to
  * @param max_edges The maximum number of edges a point can have
- * @param base_num_vectors The number of vectors in the graph
+ * @param base_num_points The number of vectors in the graph
  */
 void add_random_edges(Graph* graph, int max_edges) {
     printf("Adding random edges..\n");
-    for (int i = 0; i < graph->num_vectors; i++) {
+    for (int i = 0; i < graph->num_points; i++) {
         for (int j = 0; j < max_edges; j++) {
             int random_index;
             do {
                 // Generate a random index of a point to connect to
-                random_index = rand() % graph->num_vectors;
+                random_index = rand() % graph->num_points;
             } while (random_index == i); // Avoid self-loop
             // printf("Connecting point %d to point %d\n", i, random_index);
 
             // Add the edge if there is space
-            if ((graph->points[i].edge_count + 1) < max_edges) {
+            if ((graph->points[i].edge_count) < max_edges) {
                 graph->points[i].edges[graph->points[i].edge_count].to = random_index;
                 graph->points[i].edge_count++;
             }
@@ -114,7 +115,7 @@ void add_random_edges(Graph* graph, int max_edges) {
  * Function to print the graph coordinates for debugging
  * 
  * @param graph The graph to print
- * @param base_num_vectors The number of vectors in the graph
+ * @param base_num_points The number of vectors in the graph
  * @param base_num_coordinates The number of coordinates per vector
  * @param outputfd The file descriptor to write to
  */
@@ -122,7 +123,7 @@ void fprint_graph_coordinates(Graph* graph, FILE *outputfd) {
     printf("Printing graph coordinates..\n");
     
     // Iterate over each point in the graph
-    for (int i = 0; i < graph->num_vectors; i++) {
+    for (int i = 0; i < graph->num_points; i++) {
         Point p = graph->points[i];
         
         // Print the coordinates of the current point
@@ -147,12 +148,12 @@ void fprint_graph_coordinates(Graph* graph, FILE *outputfd) {
 /**
  * Prints the edges of the graph for debugging
  * @param graph The graph to print
- * @param base_num_vectors The number of vectors in the graph
+ * @param base_num_points The number of vectors in the graph
  * @param outputfd The file descriptor to write to
  */
 void fprint_graph(Graph* graph, FILE *outputfd) {
     printf("Printing graph..\n");
-    for (int i = 0; i < graph->num_vectors; i++) {
+    for (int i = 0; i < graph->num_points; i++) {
         Point p = graph->points[i];
         fprintf(outputfd, " Point %d edges: ", p.index);
         
@@ -163,209 +164,239 @@ void fprint_graph(Graph* graph, FILE *outputfd) {
     }
 }
 
-// Function to perform RobustPrune on a point in the graph
-// void robust_prune(Graph* graph, int point_index, int *candidate_set, float a, int R, int base_num_coordinates)
-void robust_prune(Graph* graph, int point_index, int *V, int *V_size, float a, int R) {
-    
-    printf("Performing RobustPrune on point %d\n", point_index);
-    printf("Visited count: %d\n", *V_size);
-    for (int i = 0; i < *V_size; i++) {
-        printf("%d ", V[i]);
-    }
-    printf("\n");
+// Add an edge to a point
+void addEdge(Point *point, int toIndex) {
+    point->edge_count++;
+    point->edges[point->edge_count].to = toIndex;
 
-    Point* p = &graph->points[point_index];
+}
+
+// Check if point `toIndex` is already in point's edges
+int edgeExists(Point *point, int toIndex) {
+    for (int i = 0; i < point->edge_count; i++) {
+        if (point->edges[i].to == toIndex) return 1;
+    }
+    return 0;
+}
+
+// The robustPrune function
+void robustPrune(Graph *graph, int p_index, int *V, int V_size, float a, int R) {
+    printf("Starting Robust Prune\n");
+    Point *p = &graph->points[p_index];
+
+    // Doing Robust Pruning for p_index
+    printf("Doing Robust Pruning for point %d with V_size = %d\n", p_index, V_size);
+    printf("V_size before adding %d neighbors = %d\n", p->edge_count, V_size);
     
-    // Clear the edges of the point (to be re-added during pruning)
+    // Add edges of p to V if not already included
+    // For every edge if p 
+    for (int i = 0; i < p->edge_count; i++) {
+        // Check if neighbor is already in V
+        int neighborIndex = p->edges[i].to;
+        int found = 0;
+        for (int j = 0; j < V_size; j++) {
+            if (V[j] == neighborIndex) {
+                // printf("Neighbor %d already in V\n", neighborIndex);
+                found = 1;
+                break;
+            }
+        }
+        // if not found, add to V
+        if (!found) {
+            printf("resize V from %d to %d\n", V_size, V_size + 1);
+            V = realloc(V, (V_size + 1) * sizeof(int));
+            if (!V) {
+                printf("Memory allocation of V failed!\n");
+                exit(1);
+            }
+            V[V_size] = neighborIndex;
+            V_size++;
+        }
+    }
+
+    // printf("V_size after adding neighbors = %d\n", V_size);
+
+    // Clear edges of p
+    p->edges = calloc(R, sizeof(Edge));
     p->edge_count = 0;
 
-    while (*(V_size) > 0 && p->edge_count < R) {
-        // Find the closest point p* in the candidate set
-        int best_index = -1;
-        float min_distance = INF;
+    // printf("Resetted the edges of point %d\n", p_index);    
 
-        // Find the closest point
-        for (int i = 0; i < *(V_size); i++) {
-            int candidate_index = V[i];
-            Point* candidate_point = &graph->points[candidate_index];
-            double distance = squared_euclidean_distance(p->coordinates, candidate_point->coordinates, graph->num_dimensions);
+    while (V_size > 0) {
 
-            if (distance < min_distance) {
-                min_distance = distance;
-                best_index = i;
+        // Find p* - the point in V closest to p
+        float minDistance = FLT_MAX;        // Minimum distance
+        int p_star_index = -1;              // Index of p*
+        int minIndex = -1;                  // Index of p* in V
+
+        // Iterate over V to add p* to the edges of p
+        for (int i = 0; i < V_size; i++) {
+            // Skip if p is already in V
+            if (V[i] == p_index) {
+                continue;
+            }
+            int candidateIndex = V[i];
+            // Find the point in V closest to p
+            float dist = squared_euclidean_distance(p->coordinates, graph->points[candidateIndex].coordinates, graph->num_dimensions);
+            if (dist < minDistance) {
+                minDistance = dist;
+                p_star_index = candidateIndex;
+                minIndex = i;
             }
         }
 
-        if (best_index == -1) {
-            break;
-        }
+        // Add p* to the edges of p
+        addEdge(p, p_star_index);
+        // printf("Added edge from point %d to point %d\n", p_index, p_star_index);
 
-        // Add p* to the neighbors of p
-        int p_star_index = V[best_index];
-        p->edges[p->edge_count].to = p_star_index;
-        p->edge_count++;
+        // If the number of edges reaches R, break
+        if (p->edge_count == R) break;
 
-        // Remove p* from the candidate set
-        for (int i = best_index; i < *(V_size) - 1; i++) {
-            V[i] = V[i + 1];
-        }
-        *(V_size)--;
+        // Remove p* from V by swapping with the last element
+        V[minIndex] = V[--V_size];
+        // printf("Removed point %d from V\n", p_star_index);
 
-        // Prune other points in the candidate set
-        for (int i = 0; i < *(V_size); ) {
-            int candidate_index = V[i];
-            Point* candidate_point = &graph->points[candidate_index];
-            double distance_p_star = squared_euclidean_distance(graph->points[p_star_index].coordinates, candidate_point->coordinates, graph->num_dimensions);
-            double distance_p = squared_euclidean_distance(p->coordinates, candidate_point->coordinates, graph->num_dimensions);
-
-            // IF:
-            // After removing a candidate that doesn’t satisfy
-            // the condition, you do not increment the loop counter (i stays the same).
-            // This is because the next candidate has been shifted into
-            // the current position in the array,
-            // and you need to check that candidate next.
-            //
-            // ELSE: 
-            // You increment the counter (i++) as usual,
-            // moving on to check the next candidate in the set,
-            // which is located to the same index
-            if (a * distance_p_star <= distance_p) {
-                // Remove the point if it doesn't satisfy the condition
-                for (int j = i; j < *(V_size) - 1; j++) {
-                    V[j] = V[j + 1];
-                }
-                *(V_size)--;
+        // Prune V based on the distance criterion
+        for (int i = 0; i < V_size; ) {
+            // p'
+            int p_prime_index = V[i];
+            // d(p, p')
+            float d_pp = squared_euclidean_distance(p->coordinates, graph->points[p_prime_index].coordinates, graph->num_dimensions);
+            // d(p*, p')
+            float d_pstar_pprime = squared_euclidean_distance(graph->points[p_star_index].coordinates, graph->points[p_prime_index].coordinates, graph->num_dimensions);
+            if (a * d_pstar_pprime <= d_pp) {
+                // Remove p' from V by swapping with the last element
+                V[i] = V[--V_size];
             } else {
                 i++;
             }
         }
     }
+    printf("Done Robust Pruning\n");
 }
 
 
-/**
- * Inserts a new node into the sorted list l, keeping L closest nodes
- * 
- * @param l The sorted list of node indices
- * @param distances The corresponding distances of the nodes in l
- * @param new_node The index of the new node to insert
- * @param new_distance The distance of the new node
- * @param L The number of nodes to keep in the list
- */
-void insert_l_closest(int *l, float *distances, int new_node, float new_distance, int L) {
-    int i = L - 1;
-    while (i >= 0 && distances[i] > new_distance) {
-        if (i < L - 1) {
-            distances[i + 1] = distances[i];
-            l[i + 1] = l[i];
+// Comparison function for qsort to sort indices in l_temp based on distance to Xq
+int compare(const void *a, const void *b, void *param) {
+    // Extract graph, query point, and dimensions from parameters
+    Graph *graph = ((void **)param)[0];
+    float *Xq = ((void **)param)[1];
+    int num_dimensions = *((int *)((void **)param)[2]);
+
+    int index_a = *(int *)a;
+    int index_b = *(int *)b;
+
+    // Calculate distances from points to the query point Xq
+    float distance_a = squared_euclidean_distance(graph->points[index_a].coordinates, Xq, num_dimensions);
+    float distance_b = squared_euclidean_distance(graph->points[index_b].coordinates, Xq, num_dimensions);
+
+    // Sort in ascending order based on distance
+    if (distance_a < distance_b) return -1;
+    if (distance_a > distance_b) return 1;
+    return 0;
+}
+
+// Function to sort l_temp based on distances to query point Xq
+void sort_array(Graph *graph, int *l_temp, int l_temp_size, float *Xq) {
+    // Create parameter array to pass multiple values to qsort_r
+    void *params[3] = {graph, Xq, &graph->num_dimensions};
+
+    // Sort the array in place using qsort with custom comparator
+    qsort_r(l_temp, l_temp_size, sizeof(int), compare, params);
+}
+
+
+// Helper function to check if Lamda \ V is not empty
+int exists_in_difference(int *Lamda, int Lamda_size, int *V, int V_size) {
+    for (int i = 0; i < Lamda_size; i++) {
+        int in_V = 0;
+        for (int j = 0; j < V_size; j++) {
+            if (Lamda[i] == V[j]) {
+                in_V = 1;
+                break;
+            }
         }
-        i--;
+        if (!in_V) return 1; // Found an element in Lamda that is not in V
     }
-    if (i < L - 1) {
-        distances[i + 1] = new_distance;
-        l[i + 1] = new_node;
-    }
+    return 0;
 }
 
-/**
- * After GreedySearch, find L closest nodes from visited V to Xq.
- *
- * @param V The set of visited nodes
- * @param V_size The size of the set
- * @param l The sorted list of node indices
- * @param L The number of nodes to keep in the list
- * @param Xq The query vector
- * @param graph The graph
- * @param dimensions The number of dimensions
- */
-void find_L_closest(int *V, int V_size, int *l, int L, float *Xq, Graph *graph) {
-    // Initialize distances with a large value
-    float *distances = (float *)malloc(L * sizeof(float));
-    for (int i = 0; i < L; i++) distances[i] = FLT_MAX;
-
-    // Iterate over the visited nodes and find L closest nodes
-    for (int i = 0; i < V_size; i++) {
-        int node = V[i];
-        float dist = (float)squared_euclidean_distance(graph->points[node].coordinates, Xq, graph->num_dimensions);
-        insert_l_closest(l, distances, node, dist, L);
+// Function to add an element to a dynamically resized array
+void add_to_dynamic_array(int **array, int *size, int element) {
+    *array = realloc(*array, (*size + 1) * sizeof(int));
+    if (*array == NULL) {
+        perror("Failed to allocate memory");
+        exit(EXIT_FAILURE);
     }
-
-    free(distances);
+    (*array)[*size] = element;
+    (*size)++;
 }
 
-
-/**
- * Greedy search algorithm with logging for debugging
- * 
- * @param graph The graph to search
- * @param V The set of visited points
- * @param V_size The size of the set
- * @param l The sorted list of L closest points
- * @param L The number of points to keep in the list
- * @param Xq The query vector
- * @param k The number of neighbors to consider
- * @param Xs The starting node
- */
-void GreedySearch(Graph *graph, int **V, int *V_size, int *l, const int L, float *Xq, const int k, const int Xs) {
-    
-    if (graph == NULL || V == NULL || *V == NULL || V_size == NULL || l == NULL || Xq == NULL) {
-        printf("Error: One or more input parameters are NULL\n");
-        return;
+// Helper function to check if an element is in an array
+int is_in_array(int *array, int size, int element) {
+    for (int i = 0; i < size; i++) {
+        if (array[i] == element) {
+            return 1;
+        }
     }
+    return 0;
+}
 
-    printf("Starting GreedySearch...\n");
+// Greedy search function
+void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_size, int **Lamda, int *Lamda_size, int L, int k) {
+    printf("Starting Greedy Search\n");
+    bool visited[graph->num_points]; // Array to mark visited points
+    for (int i = 0; i < graph->num_points; i++) visited[i] = 0; // Initialize visited array
 
-    (*V)[*V_size] = Xs;  // Start search from Xs
-    (*V_size)++;
+    int current = start_index; // Start from the given point
+    visited[current] = 1; // Mark starting point as visited
+    add_to_dynamic_array(V, V_size, current); // Add starting point to V
 
-    // Reallocate memory for V
-    *V = realloc(*V, ((*V_size) + 1) * sizeof(int));
-    if (*V == NULL) {
-        printf("Error: Failed to allocate memory for V\n");
-        exit(1);
-    }
-
-    int current_node = Xs;
-    
-    // Perform greedy search
-    while (1) {
+    while (exists_in_difference(*Lamda, *Lamda_size, *V, *V_size)) {
+        Point *current_point = &graph->points[current];
         float min_distance = FLT_MAX;
-        int closest_node = -1;
+        int closest_neighbor = -1;
 
-        // Look at neighbors of the current node
-        Point *p = &graph->points[current_node];
+        // Iterate over neighbors of the current point
+        for (int i = 0; i < current_point->edge_count; i++) {
+            int neighbor_index = current_point->edges[i].to;
+            Point *neighbor = &graph->points[neighbor_index];
 
-        for (int i = 0; i < p->edge_count; i++) {
-            int neighbor = p->edges[i].to;
-            if (!arrayContains(*V, *V_size, neighbor)) {
-                float dist = squared_euclidean_distance(graph->points[neighbor].coordinates, Xq, graph->num_dimensions);
-                if (dist < min_distance) {
-                    min_distance = dist;
-                    closest_node = neighbor;
-                }
+            // Add this neighbor to Lamda if not already visited
+            if (!visited[neighbor_index] && !is_in_array(*Lamda, *Lamda_size, neighbor_index)) {
+                add_to_dynamic_array(Lamda, Lamda_size, neighbor_index);
+            }
+
+            // Calculate distance to Xq
+            float distance = squared_euclidean_distance(neighbor->coordinates, Xq, graph->num_dimensions);
+
+            // Update the closest neighbor if this one is closer
+            if (distance < min_distance && !visited[neighbor_index]) {
+                min_distance = distance;
+                closest_neighbor = neighbor_index;
             }
         }
 
-        // If no more neighbors to explore, stop search
-        if (closest_node == -1) {
-            printf("No more neighbors to explore. Stopping search.\n");
+        // Check if the closest neighbor brings us closer to Xq
+        float current_distance = squared_euclidean_distance(current_point->coordinates, Xq, graph->num_dimensions);
+        if (closest_neighbor == -1 || min_distance >= current_distance) {
+            // No unvisited neighbors closer than the current point, stop search
             break;
         }
 
-        // Add the closest neighbor to visited nodes V
-        (*V)[*V_size] = closest_node;
-        (*V_size)++;
-        *V = realloc(*V, ((*V_size) + 1) * sizeof(int));
-        if (*V == NULL) {
-            printf("Error: Failed to allocate memory for V\n");
-            exit(1);
-        }
-        current_node = closest_node;  // Move to the next node
-    }
+        // Move to the closest neighbor
+        current = closest_neighbor;
+        visited[current] = 1; // Mark as visited
+        printf("Visited point: %d\n", current);
+        add_to_dynamic_array(V, V_size, current); // Add to V
 
-    // After search, find the L closest nodes from the visited ones
-    find_L_closest(*V, *V_size, l, L, Xq, graph);
-    printf("GreedySearch completed successfully\n");
+        if (*Lamda_size > L) {
+            sort_array(graph, *Lamda, *Lamda_size, Xq);
+            *Lamda_size = L;
+            *(Lamda) = realloc(*Lamda, *Lamda_size * sizeof(int));
+        }
+    }
+    printf("Finished Greedy Search\n");
 }
 
 /**
@@ -414,16 +445,17 @@ double squared_euclidean_distance(float *p, float *q, int n) {
  * @param graph The graph that contains the sampled points
  * @param sample_point_indexes The indexes of the sampled points in the graph
  * @param num_sample_points The number of sampled points
- * @param num_dimensions The number of dimensions of the points in the graph
  * @return The index of the medoid in the original graph
  */
 int calculate_medoid(Graph *graph, int *sample_point_indexes, int num_sample_points) {
+    
     float *distance_sums = (float *)malloc(num_sample_points * sizeof(float));
 
     // Initialize the distance sums to zero
     for (int i = 0; i < num_sample_points; i++) {
         distance_sums[i] = 0.0;
     }
+
 
     // Loop through all pairs of sampled points and calculate the pairwise distances
     for (int i = 0; i < num_sample_points; i++) {
@@ -454,6 +486,7 @@ int calculate_medoid(Graph *graph, int *sample_point_indexes, int num_sample_poi
     return sample_point_indexes[medoid_index];
 }
 
+
 /**
  * Function to randomly sample points from the graph
  *
@@ -461,7 +494,7 @@ int calculate_medoid(Graph *graph, int *sample_point_indexes, int num_sample_poi
  * @param num_sample_points The number of sample points to select
  * @return An array of indices representing the sampled points
  */
-int* sample_points(int num_sample_points) {
+int* sample_points(int max, int num_sample_points) {
     int *sample_point_indexes = (int *)calloc(num_sample_points, sizeof(int));
 
     // Check if memory allocation was successful
@@ -471,16 +504,137 @@ int* sample_points(int num_sample_points) {
     }
 
     // Temporary index for random selection
-    int temp_index = 0;
-    for (int i = 0; i < num_sample_points; i++) {
+    int current_index = 0;
+    int i = 0;
+    while (i < num_sample_points) {
         // Randomly select an index from the graph
-        temp_index = rand() % num_sample_points;
-        
+        current_index = rand() % max;
         // Ensure no duplicate indices are selected
-        if (!arrayContains(sample_point_indexes, i, temp_index)) {
-            sample_point_indexes[i] = temp_index;
+        if (!arrayContains(sample_point_indexes, i, current_index)) {
+            sample_point_indexes[i] = current_index;
+            i++;
         }
     }
     return sample_point_indexes;
 }
 
+void vamana_indexing(Graph *graph, int k, int L, float a, int R, FILE *outputfd) {
+
+    printf("Starting Vamana Indexing\n");
+
+    printf("k = %d\n L = %d\n a = %f\n R = %d\n", k, L, a, R);
+    
+    int max = graph->num_points;            // max - Number of points in graph
+    int num_sample_points = graph->num_points / 10;        // num_sample_points - Number of sample points     
+
+    int *sample_point_indexes = sample_points(max, num_sample_points);          // sample_point_indexes - Indexes of sampled points
+    int medoid_index = calculate_medoid(graph, sample_point_indexes, num_sample_points);            // medoid_index - Index of medoid
+    printf("Medoid index: %d\n", medoid_index);
+
+    // Initiallizations
+    bool *shuffled_point_indexes = (bool*)calloc(max, sizeof(bool));            // shuffled_point_indexes - Indexes of points in a random order
+    int current_index = -1;        // Temporary index for random selection
+    int *V;                     // V - Visited List
+    int V_size = 0;             // V_size - Size of V
+    int *l;                     // L~ - k nearest neighbors list
+
+    // Allocate memory for V
+    V = (int*)malloc((V_size + 1) * sizeof(int));
+    if (!V) {
+        printf("Memory allocation of V failed!\n");
+        exit(1);
+    }
+
+    // L~ - L nearest neighbors to Xq list
+    int lamda_size = L;
+    l = (int*)calloc(lamda_size, sizeof(int));
+    if (!l) {
+        printf("Memory allocation of l failed!\n");
+        exit(1);
+    }
+
+    printf("Memory allocation of shuffled_point_indexes and V and l completed successfully\n");
+
+    int i = 0;
+
+    // Going through all points of the graph in a random order
+    while (i < max) {
+        fprintf(outputfd, "\nProcessing %d\n", i);
+        printf("Points remaining %d\n", max - i);
+        // Randomly select an index from the graph
+        current_index = rand() % max;
+        // Ensure no duplicate indices are selected
+        if (shuffled_point_indexes[current_index] == false) {
+
+            // Mark the current index as visited
+            shuffled_point_indexes[current_index] = true;
+
+            Point *q_point = &graph->points[current_index];
+            
+            // Reset the visited list
+            V_size = 0;
+            V = NULL;
+            V = (int*)malloc(sizeof(int));
+            if (!V) {
+                printf("Vamana_Indexing: Memory allocation of V failed!\n");
+                exit(1);
+            }
+
+            printf("V got resetted\n");
+            
+            // Perform Greedy Search GreedySearch(s, Xsi, 1, L) for the current point (current_index)
+            printf("Performing Greedy Search for point %d\n", current_index);
+            fprintf(outputfd, "Performing Greedy Search for point %d\n", current_index);
+            greedy_search(graph, q_point->coordinates, medoid_index, &V, &V_size, &l, &lamda_size, L, 1);
+            // GreedySearch(graph, &V, &V_size, l, L, graph->points[current_index].coordinates, 1, medoid_index);
+        
+            printf("Performing Robust Prune for point %d\n", current_index);
+            fprintf(outputfd, "Performing Robust Prune for point %d\n", current_index);
+            robustPrune(graph, current_index, V, V_size, a, R);
+            printf("RobustPrune completed\n");
+
+
+            // Nout(j) <- Nout(j)U{s(i)}
+            printf("Updating Nout(j) for point %d\n", current_index);
+
+            for(int j = 0; j < q_point->edge_count; j++) {
+                Point *point_j = &graph->points[q_point->edges[j].to];
+                
+                // Check if |Nout(j)U{s(i)}| > R
+                //          RobustPrune(j,Nout(j)U{s(i)},a,R)
+                //      else
+                //          update Nout(j) <- Nout(j)U{s(i)}
+                if(point_j->edge_count + 1 > R) {
+
+                    // Create Temporary array to hold all the points in Nout(j) + s
+                    int *Nout_plus_s_j = (int*)malloc((point_j->edge_count + 1) * sizeof(int));
+                    for (int k = 0; k < point_j->edge_count; k++) {
+                        Nout_plus_s_j[k] = point_j->edges[k].to;
+                    }
+                    Nout_plus_s_j[point_j->edge_count] = current_index;
+
+                    // RobustPrune(j,Nout(j)U{s(i)},a,R)
+                    robustPrune(graph, point_j->index, Nout_plus_s_j, point_j->edge_count + 1, a, R);
+                    free(Nout_plus_s_j);
+                }
+                else {
+                    if (point_j->edge_count < R){
+                        // Update Nout(j) <- Nout(j)U{s(i)}
+                        printf("P* %d had %d edges\n", point_j->index, point_j->edge_count);
+                        printf("Adding edge from %d to %d\n", current_index, point_j->index);
+                        addEdge(point_j, current_index);
+                        printf("Now P* has %d edges\n", point_j->edge_count);
+                    }
+                    else{
+                        printf("something is off\n");
+                    }
+                }
+            }
+            // Go to another point
+            i++;
+        }
+    }
+    free(shuffled_point_indexes);
+    
+
+}
