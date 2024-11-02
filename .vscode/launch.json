@@ -6,7 +6,7 @@
         "type": "cppdbg",                          // Debugger type (cppdbg for C++)
         "request": "launch",                       // This tells it to launch the program
         "program": "${workspaceFolder}/my_program",// Path to your executable
-        "args": [],                                // Arguments to pass to the program (if any)
+        "args": ["-k", "6", "-L", "20", "-b", "testSets/siftsmall/siftsmall_base.fvecs", "-q", "testSets/siftsmall/siftsmall_query.fvecs", "-g", "testSets/siftsmall/siftsmall_groundtruth.ivecs", "-a", "1.2", "-R", "80"],                                // Arguments to pass to the program (if any)
         "stopAtEntry": false,                      // Whether to stop at the entry point
         "cwd": "${workspaceFolder}",               // Set current working directory
         "environment": [],                         // Pass any environment variables if necessary

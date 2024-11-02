@@ -345,8 +345,21 @@ int is_in_array(int *array, int size, int element) {
     return 0;
 }
 
+int *get_the_difference(int *Lamda, int Lamda_size, int *V, int V_size, int *Lamda_minus_V_size) {
+
+    *Lamda_minus_V_size = 0;
+    int *Lamda_minus_V = (int *)malloc(sizeof(int));
+    for(int i = 0; i < Lamda_size; i++) {
+        if(!is_in_array(V, V_size, Lamda[i])) {
+            add_to_dynamic_array(&Lamda_minus_V, Lamda_minus_V_size, Lamda[i]);
+        }
+    }
+    return Lamda_minus_V;
+}
+
 // Greedy search function
 void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_size, int **Lamda, int *Lamda_size, int L, int k) {
+
     // Allocate initial space for V and Lamda
     *V = (int *)malloc(sizeof(int) * graph->num_points);
     *V_size = 0;
@@ -356,51 +369,57 @@ void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_siz
     // Initialize Lamda with the start point
     (*Lamda)[(*Lamda_size)++] = start_index;
 
-    // Main loop: Continue until Lamda is empty or has no new elements
-    while (*Lamda_size > 0) {
-        // Select the point p* from Lamda that is closest to the query point Xq
+    // Create an int array that contains points that are in Lamda but not in V
+    int *Lamda_minus_V;
+    int Lamda_minus_V_size = 0;
+    Lamda_minus_V = get_the_difference(*Lamda, *Lamda_size, *V, *V_size, &Lamda_minus_V_size);
+
+    Point *p_star = NULL;
+
+    // for every point in Lamda_minus_V
+    // calculate the distance from xq to that point
+    // the one that is closest is p*
+    // Take P* 's   Neighbors and add them to Lamda
+    // Take P* and add it to V
+
+    // Main loop: Continue until Lamda_minus_V is empty
+    while (Lamda_minus_V_size > 0) {
+        // Select the point p* from Lamda_minus_V that is closest to the query point Xq
         int closest_index = -1;
         float min_distance = FLT_MAX;
-        
-        // Iterate over Lamda to find the closest point to Xq
-        for (int i = 0; i < *Lamda_size; i++) {
-            int current_index = (*Lamda)[i];
-            float distance = euclidean_distance(graph->points[current_index].coordinates, Xq, graph->num_dimensions);
+        for (int i = 0; i < Lamda_minus_V_size; i++) {
+            int current_index = Lamda_minus_V[i];
+            float distance = squared_euclidean_distance(graph->points[current_index].coordinates, Xq, graph->num_dimensions);
             if (distance < min_distance) {
                 min_distance = distance;
                 closest_index = current_index;
             }
         }
+        p_star = &graph->points[closest_index];
 
-        // If no valid point found, break
-        if (closest_index == -1) break;
+        // Add p* to V
+        add_to_dynamic_array(V, V_size, p_star->index);
 
-        // Remove p* from Lamda and add it to V
-        for (int i = 0; i < *Lamda_size; i++) {
-            if ((*Lamda)[i] == closest_index) {
-                (*Lamda)[i] = (*Lamda)[*Lamda_size - 1];
-                (*Lamda_size)--;
-                break;
-            }
-        }
-        (*V)[(*V_size)++] = closest_index;
-
-        // Explore outgoing edges from p*
-        Point *p_star = &graph->points[closest_index];
+        // Add the neighbors of p* to Lamda
         for (int i = 0; i < p_star->edge_count; i++) {
             int neighbor_index = p_star->edges[i];
-
-            // Add neighbor to Lamda if not already in V or Lamda
-            if (!contains(*V, *V_size, neighbor_index) && !contains(*Lamda, *Lamda_size, neighbor_index)) {
-                (*Lamda)[(*Lamda_size)++] = neighbor_index;
-            }
+            add_to_dynamic_array(Lamda, Lamda_size, neighbor_index);
         }
 
-        // Limit the size of Lamda and V to L and k respectively
-        if (*Lamda_size > L) *Lamda_size = L;
-        if (*V_size >= k) break;
+        // Check if |Lamda| > L
+        if (*Lamda_size > L) {
+            // Update Lamda to contain the L closest points to Xq
+            sort_array(graph, *Lamda, *Lamda_size, Xq);
+            *Lamda = (int *)realloc(*Lamda, L * sizeof(int));
+            *Lamda_size = L;
+        }
+        
+        // Update Lamda_minus_V
+        Lamda_minus_V = get_the_difference(*Lamda, *Lamda_size, *V, *V_size, &Lamda_minus_V_size); 
     }
+    free(Lamda_minus_V);
 }
+
 /**
  * Checks if a node is in the visited array V
  * 
@@ -580,7 +599,15 @@ void vamana_indexing(Graph *graph, int k, int L, float a, int R, FILE *outputfd)
             printf("Calling greedy search with s: %d, Xq: %d, V_size: %d, lamda_size: %d, L: %d, k: %d\n", medoid_index, graph->points[s_index].index, V_size, lamda_size, L, 1);
             greedy_search(graph, graph->points[s_index].coordinates, medoid_index, &V, &V_size, &lamda, &lamda_size, L, 1);
 
+            printf("V size: %d\n", V_size);
+            for(int h = 0; h < V_size; h++) {
+                printf("V[%d] = %d\n", h, V[h]);
+            }
             check_for_duplicates(V, V_size);
+
+            printf("Closest point to Xq %d : %d \n", s_index, lamda[0]);
+            
+
             exit(3);
 
             // =============== ROBUST PRUNE ================ //

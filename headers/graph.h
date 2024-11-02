@@ -38,6 +38,7 @@ int edgeExists(Point *point, int toIndex);
 void robustPrune(Graph *graph, int p_index, int *V, int V_size, float a, int R);
 
 int exists_in_difference(int *Lamda, int Lamda_size, bool *Visited);
+int *get_the_difference(int *Lamda, int Lamda_size, int *V, int V_size, int *Lamda_minus_V_size);
 
 void swap(int *a, int *b);
 void swap_float(float *a, float *b);

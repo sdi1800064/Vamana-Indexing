@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
     fprintf(outputfd, "Number of Groundtruth-Vectorts: %d\n", groundtruth_num_vectors);
 
     
-    Graph *base_graph = create_random_graph(base_vectors, base_num_dimensions, R, 500);
+    Graph *base_graph = create_random_graph(base_vectors, base_num_dimensions, R, base_num_vectors);
 
 
     //============== UNCOMMENT THIS TO PRINT THE RANDOM GRAPH =================//
