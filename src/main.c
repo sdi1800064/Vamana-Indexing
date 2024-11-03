@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
 
 
     // ============== CREATING RANDOM GRAPH ================= //
-    Graph *base_graph = create_random_graph(base_vectors, 5, R, 20);
+    Graph *base_graph = create_random_graph(base_vectors, base_num_dimensions, R, base_num_vectors);
 
 
     // ------ UNCOMMENT THIS TO PRINT THE RANDOM GRAPH ------ //
@@ -129,39 +129,92 @@ int main(int argc, char *argv[]) {
 
     printf("printed graph to the output file\n");
 
-    // ============== VAMANA INDEXING ================= //
-    vamana_indexing(base_graph, L, a, R, outputfd);
-
-    float recall = 0.0;
     int *K_CLOSEST[query_num_vectors];
     int *V = NULL;
     int V_size = 0;
+    int lamda_size = 0;
+
+    printf("= Calculating recall..\n");
+    // ============ RECALL BEFORE VAMANA INDEXING ============= //
+
+    // How many of the k-returned are in the groundtruth
+    for(int i = 0; i < query_num_vectors; i++) {
+        int random_index = rand() % base_num_vectors;
+        K_CLOSEST[i] = (int*)malloc(sizeof(int));
+        greedy_search(base_graph, query_vectors[i], random_index, &V, &V_size, &K_CLOSEST[i], &lamda_size, L, k);
+    }    
+    free(V);
+
+    float recall;
+    int in_groundtruth = 0;
+    for(int i = 0; i < query_num_vectors; i++) {
+        for(int j = 0; j < k; j++) {
+            int predicted_index = K_CLOSEST[i][j];
+            printf("Predicted index: K_CLOSEST[%d][%d] = %d\n", i, j, predicted_index);
+            for(int l = 0; l < groundtruth_num_dimensions; l++) {
+                int groundtruth_index = groundtruth_vectors[i][l];
+                if(predicted_index == groundtruth_index) {
+                    in_groundtruth ++;
+                }
+            }
+        }
+        printf("For query %d, predicted %d/%d \n", i, in_groundtruth, k);
+        // recall is | number of k-predicted points in groundtruth | / | k |
+        recall += in_groundtruth / k;
+
+        in_groundtruth = 0;
+    }
+
+    float final_recall_num = 0.0;
+    final_recall_num = recall/query_num_vectors*100;
+
+    // Print the recall
+    printf("Recall: %.3f%%\n", final_recall_num);
+
+    // ============== VAMANA INDEXING ================= //
+    vamana_indexing(base_graph, L, a, R, outputfd);
+
+    // ============ RECALL AFTER VAMANA INDEXING ============= //
+
+    *V = NULL;
+    V_size = 0;
+    lamda_size = 0;
 
     printf("= Calculating recall..\n");
 
     // How many of the k-returned are in the groundtruth
     for(int i = 0; i < query_num_vectors; i++) {
         int random_index = rand() % base_num_vectors;
-        K_CLOSEST[i] = (int*)malloc(L * sizeof(int));
-        K_CLOSEST[i] = greedy_search(base_graph, random_index, query_vectors[i], L, &V_size, &V);
+        K_CLOSEST[i] = (int*)malloc(sizeof(int));
+        greedy_search(base_graph, query_vectors[i], random_index, &V, &V_size, &K_CLOSEST[i], &lamda_size, L, k);
     }    
     free(V);
 
+    fprintf(outputfd, "Printing the groundtruth in output file...\n");
+    fprintIntVectors(groundtruth_vectors, groundtruth_num_vectors, groundtruth_num_dimensions, outputfd);
+
+    
+    in_groundtruth = 0;
     for(int i = 0; i < query_num_vectors; i++) {
         for(int j = 0; j < k; j++) {
             int predicted_index = K_CLOSEST[i][j];
+            printf("Predicted index: K_CLOSEST[%d][%d] = %d\n", i, j, predicted_index);
             for(int l = 0; l < groundtruth_num_dimensions; l++) {
                 int groundtruth_index = groundtruth_vectors[i][l];
                 if(predicted_index == groundtruth_index) {
-                    recall += 1.0;
-                    break;
+                    in_groundtruth ++;
                 }
             }
         }
+        printf("For query %d, predicted %d/%d \n", i, in_groundtruth, k);
+        // recall is | number of k-predicted points in groundtruth | / | k |
+        recall += (in_groundtruth / k);
+
+        in_groundtruth = 0;
     }
-
-    printf("Recall: %f\n", (recall / query_num_vectors));
-
+    final_recall_num = recall/query_num_vectors*100;
+    // Print the recall
+    printf("Recall: %.3f%%\n", final_recall_num);
     
     printf("Exiting the program..\n");
 

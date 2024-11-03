@@ -44,7 +44,7 @@ void swap(int *a, int *b);
 void swap_float(float *a, float *b);
 void sort_array(Graph *graph, int *l_temp, int l_temp_size, float *Xq);
 void printArray(int *array, int array_size);
-int* greedy_search(Graph *graph, int start_index, float *Xq, int L, int *V_size, int **V);
+void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_size, int **Lamda, int *Lamda_size, int L, int k);
 // void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_size, int **Lamda, int L, int k);
 int arrayContains(int *V, int V_size, int node);
 void add_to_dynamic_array(int **array, int *size, int element);
