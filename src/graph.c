@@ -117,6 +117,7 @@ void fprint_graph_coordinates(Graph* graph, FILE *outputfd) {
     }
 }
 
+
 /**
  * Prints the edges of the graph for debugging
  * @param graph The graph to print
@@ -136,7 +137,13 @@ void fprint_graph(Graph* graph, FILE *outputfd) {
     }
 }
 
-// Add an edge to a point
+
+/**
+ * Adds an edge from the given point to the point with index `toIndex` if that edge does not already exist.
+ * 
+ * @param point The point to add the edge from
+ * @param toIndex The index of the point to add the edge to
+ */
 void addEdge(Point *point, int toIndex) {
     for(int i = 0; i < point->edge_count; i++) {
         if (point->edges[i] == toIndex) return;
@@ -148,7 +155,19 @@ void addEdge(Point *point, int toIndex) {
 
 }
 
-// Function to add an element to a dynamically resized array
+/**
+ * Adds an element to a dynamic array if it is not already present.
+ *
+ * This function checks if the given element is already in the array.
+ * If not, it reallocates memory to increase the array size by one and
+ * adds the element to the end of the array. If memory reallocation fails,
+ * the original array is preserved.
+ *
+ * @param array A pointer to the dynamic array to be modified.
+ * @param size A pointer to the current size of the array, which is updated.
+ * @param element The element to be added to the array.
+ */
+
 void add_to_dynamic_array(int **array, int *size, int element) {
     if(arrayContains(*array, *size, element)) {
         return;
@@ -175,19 +194,27 @@ int edgeExists(Point *point, int toIndex) {
     return 0;
 }
 
-// The robustPrune function
+
+/**
+ * Robust Pruning Algorithm
+ * 
+ * Add to V all the neighbors of p and remove p from V if it exists
+ * Set reset edges of p
+ * While V is not empty
+ * set as P* the closest point in V to p
+ * Add P* to the neighbors of p
+ * if the number of neighbors of p is equal to R then break
+ * for every point p' in V
+ * if a * d(p*, p') <= d(p, p') then remove p' from V
+ *
+ * @param graph The graph containing the point p
+ * @param p_index The index of the point p
+ * @param V The set of points that are candidates to be neighbors of p
+ * @param V_size The size of V
+ * @param a The pruning parameter
+ * @param R The maximum number of neighbors of p
+ */
 void robustPrune(Graph *graph, int p_index, int *V, int V_size, float a, int R) {
-
-    // Add to V all the neighbors of p and remove p from V if it exists
-    // Set reset edges of p
-    // While V is not empty
-    // set as P* the closest point in V to p
-    // Add P* to the neighbors of p
-    // if the number of neighbors of p is equal to R then break
-    // for every point p' in V
-    // if a * d(p*, p') <= d(p, p') then remove p' from V
-
-    // printf("-- Starting PRUNING --\n");
 
     // add to V all the neighbors of p and remove p from v if it exists
     for (int i = 0; i < graph->points[p_index].edge_count; i++) {
@@ -255,21 +282,44 @@ void robustPrune(Graph *graph, int p_index, int *V, int V_size, float a, int R) 
 }
 
 
-// Function to swap two elements in an array
+/**
+ * Swaps the values of two int pointers.
+ *
+ * @param a The first int pointer.
+ * @param b The second int pointer.
+ */
 void swap(int *a, int *b) {
     int temp = *a;
     *a = *b;
     *b = temp;
 }
 
-// Function to swap two elements in a float array
+
+/**
+ * Swaps the values of two float pointers.
+ *
+ * @param a The first float pointer.
+ * @param b The second float pointer.
+ */
 void swap_float(float *a, float *b) {
     float temp = *a;
     *a = *b;
     *b = temp;
 }
 
-// Sort function to sort array based on distance from Xq
+
+/**
+ * Sorts the given array of point indexes in ascending order of their squared Euclidean distances from the given query point Xq.
+ *
+ * The function first calculates the squared Euclidean distances for each point in the array and stores them in a temporary array.
+ * It then uses a basic selection sort to sort both the distances array and the input array of indexes.
+ * After sorting, the temporary distances array is freed.
+ *
+ * @param graph The graph containing the points.
+ * @param array The array of point indexes to sort.
+ * @param array_size The size of the array.
+ * @param Xq The query point.
+ */
 void sort_array(Graph *graph, int *array, int array_size, float *Xq) {
     // Create an array to hold distances
     float *distances = (float *)malloc(array_size * sizeof(float));
@@ -307,6 +357,19 @@ void sort_array(Graph *graph, int *array, int array_size, float *Xq) {
 }
 
 
+/**
+ * Calculates the difference between two arrays of integers, Lamda and V.
+ *
+ * The returned array, Lamda_minus_V, contains the elements of Lamda that are not in V.
+ * The size of Lamda_minus_V is stored in *Lamda_minus_V_size.
+ *
+ * @param Lamda The first array of integers.
+ * @param Lamda_size The size of Lamda.
+ * @param V The second array of integers.
+ * @param V_size The size of V.
+ * @param Lamda_minus_V_size The size of the returned array.
+ * @return The returned array.
+ */
 int *get_the_difference(int *Lamda, int Lamda_size, int *V, int V_size, int *Lamda_minus_V_size) {
     *Lamda_minus_V_size = 0;
     int *Lamda_minus_V = (int *)malloc(sizeof(int));
@@ -322,6 +385,16 @@ int *get_the_difference(int *Lamda, int Lamda_size, int *V, int V_size, int *Lam
     return Lamda_minus_V;
 }
 
+
+/**
+ * Prints the elements of an integer array.
+ *
+ * This function iterates through the given array and prints each element
+ * followed by a space. After printing all elements, it prints a newline.
+ *
+ * @param array Pointer to the integer array to be printed.
+ * @param array_size The number of elements in the array.
+ */
 void printArray(int *array, int array_size) {
     for (int i = 0; i < array_size; i++) {
         printf("%d ", array[i]);
@@ -329,7 +402,15 @@ void printArray(int *array, int array_size) {
     printf("\n");
 }
 
-// Helper function to check if an element is in an array
+
+/**
+ * Checks if an element is present in an array.
+ *
+ * @param array The array to be searched
+ * @param size The size of the array
+ * @param element The element to be searched
+ * @return 1 if the element is present in the array, 0 otherwise.
+ */
 int is_in_array(int *array, int size, int element) {
     for (int i = 0; i < size; i++) {
         if (array[i] == element) {
@@ -340,8 +421,22 @@ int is_in_array(int *array, int size, int element) {
 }
 
 
-// Greedy search function
-void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_size, int **Lamda, int *Lamda_size, int L, int k) {
+/**
+ * Performs a greedy search on the graph to find the L closest points to a given query point Xq.
+ *
+ * The algorithm works by selecting the point in Lamda that is closest to Xq, adding it to V, and then adding the neighbors of that point to Lamda.
+ * It continues until all points in Lamda are visited or the limit L is reached.
+ *
+ * @param graph The graph to search.
+ * @param Xq The query point.
+ * @param start_index The index of the starting point of the search.
+ * @param V The list of visited points.
+ * @param V_size The size of V.
+ * @param Lamda The list of points to consider.
+ * @param Lamda_size The size of Lamda.
+ * @param L The limit on the number of points to consider.
+ */
+void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_size, int **Lamda, int *Lamda_size, int L) {
 
     // Allocate initial space for V and Lamda
     *V = (int *)malloc(sizeof(int) * graph->num_points);
@@ -407,6 +502,7 @@ void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_siz
     free(Lamda_minus_V);
 }
 
+
 /**
  * Checks if a node is in the visited array V
  * 
@@ -444,6 +540,7 @@ double squared_euclidean_distance(float *p, float *q, int n) {
     }
     return sum;  // Return the squared Euclidean distance
 }
+
 
 /**
  * Calculates the medoid from a set of sampled points
@@ -527,7 +624,17 @@ int* sample_points(int max, int num_sample_points) {
     return sample_point_indexes;
 }
 
-// Function to check for duplicates in an array
+
+/**
+ * Checks an array for duplicate elements
+ *
+ * @param array The array to check
+ * @param size The size of the array
+ * @return void
+ *
+ * This function checks the given array for any duplicate elements. If a
+ * duplicate is found, it prints a message indicating the duplicate value.
+ */
 void check_for_duplicates(int *array, int size) {
     for (int i = 0; i < size; i++) {
         for (int j = i + 1; j < size; j++) {
@@ -539,40 +646,48 @@ void check_for_duplicates(int *array, int size) {
     }
 }
 
-void vamana_indexing(Graph *graph, int L, float a, int R, FILE *outputfd) {
 
-    printf("===============Starting Vamana Indexing===============\n");
+/**
+ * Performs Vamana indexing on a given graph to optimize its structure.
+ *
+ * get the medoid of the graph
+ * traverse the graph in a random way without repetitions
+ * for every random point in the graph
+ * run greedysearch(medoid, random point, k=1, L) to get the visited list V
+ * run robustPrune(random Point, Visited list, a, R)
+ * for every neighbor of random point p'
+ * if | neighbor(p') U random point | > R then
+ * run robustPrune(p', Neighbors of p' U random point, a, R)
+ * else add to neighbors of p' the random point
+ * end for
+ *
+ * @param graph The graph to be indexed.
+ * @param L The parameter controlling the size of the visited list in the greedy search.
+ * @param a The pruning parameter that influences the robustness of pruning.
+ * @param R The maximum number of neighbors allowed for a point after pruning.
+ */
+void vamana_indexing(Graph *graph, int L, float a, int R) {
 
-    printf("L = %d\na = %f\nR = %d\n", L, a, R);
-
-    // get the medoid of the graph
-    // traverse the graph in a random way without repetitions
-    // for every random point in the graph
-    // run greedysearch(medoid, random point, k=1, L) to get the visited list V
-    // run robustPrune(random Point, Visited list, a, R)
-    // for every neighbor of random point p'
-    // if | neighbor(p') U random point | > R then
-    // run robustPrune(p', Neighbors of p' U random point, a, R)
-    // else add to neighbors of p' the random point
-    // end for
+    printf("Starting Vamana Indexing\n");
 
     // Calculating the medoid
-    int *sample_point_indexes = sample_points(graph->num_points, graph->num_points / 10);
-    int medoid_index = calculate_medoid(graph, sample_point_indexes, graph->num_points / 10);
+    // ======= CHANGE THE PERCENTAGE OF THE SAMPLES HERE ======== //
+    int percentage = 20;
+    // ========================================================== //
+
+    int num_sample_points = graph->num_points / percentage;
+    int *sample_point_indexes = sample_points(graph->num_points, num_sample_points);
+    int medoid_index = calculate_medoid(graph, sample_point_indexes, num_sample_points);
     printf("Medoid index: %d\n", medoid_index);
 
-    fprintf(outputfd,  "\n\nGraph before indexing:\n");
-    fprint_graph(graph, outputfd);
-
     // traverse the graph in a random way without repetitions
-    
     bool *shuffled_point_indexes = (bool *)calloc(graph->num_points, sizeof(bool));
     int s_index;
     int i=0;
     int* V = NULL;
     int *lamda = NULL;
-    int V_size = 0;
     int lamda_size = 0;
+    int V_size = 0;
     
     while(i < graph->num_points) {
         s_index = rand() % graph->num_points;
@@ -581,12 +696,9 @@ void vamana_indexing(Graph *graph, int L, float a, int R, FILE *outputfd) {
             // printf("Indexing point %d\n", s_index);
 
             // =============== GREEDY SEARCH ================ //
-            // printf("Calling greedy search with s: %d, Xq: %d, V_size: %d, lamda_size: %d, L: %d, k: %d\n", medoid_index, graph->points[s_index].index, V_size, lamda_size, L, 1);
-            greedy_search(graph, graph->points[s_index].coordinates, medoid_index, &V, &V_size, &lamda, &lamda_size, L, 1);
-
+            greedy_search(graph, graph->points[s_index].coordinates, medoid_index, &V, &V_size, &lamda, &lamda_size, L);
 
             // =============== ROBUST PRUNE ================ //
-            // printf("Calling robust prune with s_index: %d and V_size: %d\n", s_index, V_size);
             robustPrune(graph, s_index, V, V_size, a, R);
 
             int *new_V = NULL;
@@ -621,34 +733,15 @@ void vamana_indexing(Graph *graph, int L, float a, int R, FILE *outputfd) {
             }
             // Traversed to another point of the graph
             i++;
-            printf("Remaining %d\n", graph->num_points - i);            
+
             V = NULL;
             V_size = 0;
             lamda = NULL;
-            lamda_size = 0;        
+            lamda_size = 0;
         }
 
     }
-
     free(V);
     free(lamda);            
-
-    fprintf(outputfd, "\n\nGraph after Vamana Indexing\n");
-    fprint_graph(graph, outputfd);
-
     free(shuffled_point_indexes);
-}
-
-
-// Function to return a pointer to a new array containing the row at index `num`
-int* get_kclosest(int** kclosest, int num, int k) {
-    // Allocate memory for the result array of size k
-    int* result = (int*)malloc(sizeof(int) * k);
-    
-    // Copy the elements from the row `num` into `result`
-    for (int i = 0; i < k; i++) {
-        result[i] = kclosest[num][i];
-    }
-    
-    return result;
 }

@@ -74,39 +74,44 @@ int main(int argc, char *argv[]) {
 
     if(L < k)  {
         fprintf(stderr, "Error: L must be greater than k.\n");
+        exit(1);
     }
 
+    printf("k = %d | L = %d | a = %f | R = %d\n", k, L, a, R);
 
+
+    // ===================== CREATE OUTPUT FILE IF NEEDED ================== //
     // Create an output file
-    FILE *file_check = fopen("output.txt", "r");
-    if (file_check != NULL) {
-        // File exists, so close it and delete it
-        printf("Existing output.txt file found. Deleting...\n");
-        fclose(file_check);
-        if (remove("output.txt") == 0) {
-            printf("File deleted successfully.\n");
-        } else {
-            printf("Error: Could not delete existing output.txt file!\n");
-            return 1;
-        }
-    }
+    
+    // FILE *file_check = fopen("output.txt", "r");
+    // if (file_check != NULL) {
+    //     // File exists, so close it and delete it
+    //     printf("Existing output.txt file found. Deleting...\n");
+    //     fclose(file_check);
+    //     if (remove("output.txt") == 0) {
+    //         printf("File deleted successfully.\n");
+    //     } else {
+    //         printf("Error: Could not delete existing output.txt file!\n");
+    //         return 1;
+    //     }
+    // }
 
-    // Create a new file (overwrite or create anew)
-    FILE *outputfd = fopen("output.txt", "w");
-    if (outputfd == NULL) {
-        printf("Error: Could not create output.txt file!\n");
-        return 1;
-    }
+    // // Create a new file (overwrite or create anew)
+    // FILE *outputfd = fopen("output.txt", "w");
+    // if (outputfd == NULL) {
+    //     printf("Error: Could not create output.txt file!\n");
+    //     return 1;
+    // }
 
     // Read the base_vectors from the file
     read_fvecs(base_file_name, &base_vectors, &base_num_vectors, &base_num_dimensions);
-    fprintf(outputfd, "Base-Vector dimensionality: %d\n", base_num_dimensions);
-    fprintf(outputfd, "Number of Base-Vectorts: %d\n", base_num_vectors);
+    printf("Base-Vector dimensionality: %d\n", base_num_dimensions);
+    printf("Number of Base-Vectorts: %d\n", base_num_vectors);
 
     // Read the query_vectors from the file
     read_fvecs(query_file_name, &query_vectors, &query_num_vectors, &query_num_dimensions);
-    fprintf(outputfd, "Query-Vector dimensionality: %d\n", query_num_dimensions);
-    fprintf(outputfd, "Number of query-Vectorts: %d\n", query_num_vectors);
+    printf("Query-Vector dimensionality: %d\n", query_num_dimensions);
+    printf("Number of Query-Vectorts: %d\n", query_num_vectors);
 
     //============== UNCOMMENT THIS TO PRINT THE QUERY POINTS =================//
     // printf("Printing query vector...\n");
@@ -114,8 +119,8 @@ int main(int argc, char *argv[]) {
 
     // Read the groundtruth_vectors from the file
     read_ivecs(groundtruth_file_name, &groundtruth_vectors, &groundtruth_num_vectors, &groundtruth_num_dimensions);
-    fprintf(outputfd, "Groundtruth-Vector dimensionality: %d\n", groundtruth_num_dimensions);
-    fprintf(outputfd, "Number of Groundtruth-Vectorts: %d\n", groundtruth_num_vectors);
+    printf("Number of Groundtruth indexes: %d\n", groundtruth_num_dimensions);
+    printf("Groundtruths for queries: %d\n", groundtruth_num_vectors);
     // fprintIntVectors(groundtruth_vectors, groundtruth_num_vectors, groundtruth_num_dimensions, outputfd);
 
 
@@ -124,102 +129,95 @@ int main(int argc, char *argv[]) {
 
 
     // ------ UNCOMMENT THIS TO PRINT THE RANDOM GRAPH ------ //
-    fprintf(outputfd, "Printing random graph in output file...\n");
-    fprint_graph(base_graph, outputfd);
+    // fprintf(outputfd, "Printing random graph in output file...\n");
+    // fprint_graph(base_graph, outputfd);
 
-    printf("printed graph to the output file\n");
+    // printf("printed graph to the output file\n");
 
+
+    // ============== RECALL BEFORE VAMANA INDEXING ================= //
+    
     int *K_CLOSEST[query_num_vectors];
     int *V = NULL;
     int V_size = 0;
     int lamda_size = 0;
+    float recall = 0.0;
 
-    printf("= Calculating recall..\n");
-    // ============ RECALL BEFORE VAMANA INDEXING ============= //
 
-    // How many of the k-returned are in the groundtruth
-    for(int i = 0; i < query_num_vectors; i++) {
-        int random_index = rand() % base_num_vectors;
-        K_CLOSEST[i] = (int*)malloc(sizeof(int));
-        greedy_search(base_graph, query_vectors[i], random_index, &V, &V_size, &K_CLOSEST[i], &lamda_size, L, k);
-    }    
-    free(V);
+    int total_count = 0;
+    int count = 0;
+    int prediction_count = 0;
 
-    float recall;
-    int in_groundtruth = 0;
-    for(int i = 0; i < query_num_vectors; i++) {
-        for(int j = 0; j < k; j++) {
-            int predicted_index = K_CLOSEST[i][j];
-            printf("Predicted index: K_CLOSEST[%d][%d] = %d\n", i, j, predicted_index);
-            for(int l = 0; l < groundtruth_num_dimensions; l++) {
-                int groundtruth_index = groundtruth_vectors[i][l];
-                if(predicted_index == groundtruth_index) {
-                    in_groundtruth ++;
-                }
-            }
-        }
-        printf("For query %d, predicted %d/%d \n", i, in_groundtruth, k);
-        // recall is | number of k-predicted points in groundtruth | / | k |
-        recall += in_groundtruth / k;
-
-        in_groundtruth = 0;
-    }
-
-    float final_recall_num = 0.0;
-    final_recall_num = recall/query_num_vectors*100;
-
-    // Print the recall
-    printf("Recall: %.3f%%\n", final_recall_num);
+    // =============== UUNCOMMENT TO PRINT THE RECALL BEFORE VAMANA INDEXING ================== //
+    // for(int i = 0; i < query_num_vectors; i++) {
+    //     K_CLOSEST[i] = (int*)malloc(sizeof(int));
+    //     int random_graph_index = rand() % base_num_vectors;
+    //     greedy_search(base_graph, query_vectors[i], random_graph_index, &V, &V_size, &K_CLOSEST[i], &lamda_size, L, k);
+    //     for(int j = 0; j < k; j++) {
+    //         int predicted_index = K_CLOSEST[i][j];
+    //         for(int l = 0; l < groundtruth_num_vectors; l++) {
+    //             if(predicted_index == groundtruth_vectors[i][l]) {
+    //                 count++;
+    //                 break;
+    //             }
+    //         }
+    //     }
+    //     // printf("Query %d: Found %d / %d\n", i, count, k);
+    //     total_count += count;
+    //     recall += count / k;
+    //     count = 0;
+    // }
+    // int prediction_count = k * query_num_vectors;
+    // printf("Found %d / %d before\n", total_count, prediction_count);
+    // recall = (float)total_count / prediction_count;
+    // printf("Recall: %.3f%%\n", recall*100);
 
     // ============== VAMANA INDEXING ================= //
-    vamana_indexing(base_graph, L, a, R, outputfd);
+
+    vamana_indexing(base_graph, L, a, R);
 
     // ============ RECALL AFTER VAMANA INDEXING ============= //
 
-    *V = NULL;
-    V_size = 0;
-    lamda_size = 0;
-
     printf("= Calculating recall..\n");
 
-    // How many of the k-returned are in the groundtruth
+    V = NULL;
+    V_size = 0;
+    lamda_size = 0;
+    recall = 0.0;
+
+    total_count = 0;
+    count = 0;
     for(int i = 0; i < query_num_vectors; i++) {
-        int random_index = rand() % base_num_vectors;
         K_CLOSEST[i] = (int*)malloc(sizeof(int));
-        greedy_search(base_graph, query_vectors[i], random_index, &V, &V_size, &K_CLOSEST[i], &lamda_size, L, k);
-    }    
-    free(V);
-
-    fprintf(outputfd, "Printing the groundtruth in output file...\n");
-    fprintIntVectors(groundtruth_vectors, groundtruth_num_vectors, groundtruth_num_dimensions, outputfd);
-
-    
-    in_groundtruth = 0;
-    for(int i = 0; i < query_num_vectors; i++) {
+        int random_graph_index = rand() % base_num_vectors;
+        greedy_search(base_graph, query_vectors[i], random_graph_index, &V, &V_size, &K_CLOSEST[i], &lamda_size, L);
         for(int j = 0; j < k; j++) {
             int predicted_index = K_CLOSEST[i][j];
-            printf("Predicted index: K_CLOSEST[%d][%d] = %d\n", i, j, predicted_index);
-            for(int l = 0; l < groundtruth_num_dimensions; l++) {
-                int groundtruth_index = groundtruth_vectors[i][l];
-                if(predicted_index == groundtruth_index) {
-                    in_groundtruth ++;
+            for(int l = 0; l < groundtruth_num_vectors; l++) {
+                if(predicted_index == groundtruth_vectors[i][l]) {
+                    count++;
+                    break;
                 }
             }
         }
-        printf("For query %d, predicted %d/%d \n", i, in_groundtruth, k);
-        // recall is | number of k-predicted points in groundtruth | / | k |
-        recall += (in_groundtruth / k);
-
-        in_groundtruth = 0;
+        // printf("Query %d: Found %d / %d\n", i, count, k);
+        recall += count / k;
+        total_count += count;
+        count = 0;
+        free(K_CLOSEST[i]);
     }
-    final_recall_num = recall/query_num_vectors*100;
-    // Print the recall
-    printf("Recall: %.3f%%\n", final_recall_num);
-    
+
+    free(V);
+    prediction_count = k * query_num_vectors;
+    recall = (float) total_count / prediction_count;
+    printf("Found %d / %d\n", total_count, prediction_count);
+    printf("Recall: %.3f%%\n", recall*100);
+
+
     printf("Exiting the program..\n");
 
     // Close the file
-    fclose(outputfd);
+    // fclose(outputfd);
 
     return 0;
 }
