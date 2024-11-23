@@ -42,9 +42,13 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(OBJ_DIR) # Create obj directory if it doesn't exist
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Clean rule to remove object files and executable
+# Rule to compile and link the test executable
+test: $(SRC_DIR)/test.c $(SRC_DIR)/fvecs.c
+	$(CC) -o test $(SRC_DIR)/test.c $(SRC_DIR)/fvecs.c $(SRC_DIR)/graph.c $(CFLAGS) $(LDFLAGS)
+
+# Clean rule to remove object files and executables
 clean:
-	rm -rf $(OBJ_DIR)/*.o $(EXEC) output.txt
+	rm -rf $(OBJ_DIR)/*.o $(EXEC) test output.txt
 
 # Phony targets
-.PHONY: all debug clean
+.PHONY: all debug clean test

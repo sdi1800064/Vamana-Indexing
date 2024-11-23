@@ -1,12 +1,18 @@
 # Execute
 
-To create the executable run 
+To create the main executable run 
 ```make```
 
-In order to run the executable 
+To create the test executable run
+```make test```
+
+In order to run the main executable 
 ```./my_program```
 
-you can use the following flags:
+In order to run the test executable 
+```./test```
+
+you can use the following flags for the main:
 
 ```-b <base_file_location>```
 

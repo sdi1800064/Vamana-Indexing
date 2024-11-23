@@ -356,6 +356,22 @@ void sort_array(Graph *graph, int *array, int array_size, float *Xq) {
 
 }
 
+// Function to sort an array using Bubble Sort
+void sort_int_array(int *array, int size) {
+    if (size <= 1) return; // No need to sort arrays of size 0 or 1
+
+    for (int i = 0; i < size - 1; i++) {
+        for (int j = 0; j < size - i - 1; j++) {
+            if (array[j] > array[j + 1]) {
+                // Swap elements
+                int temp = array[j];
+                array[j] = array[j + 1];
+                array[j + 1] = temp;
+            }
+        }
+    }
+}
+
 
 /**
  * Calculates the difference between two arrays of integers, Lamda and V.
