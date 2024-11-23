@@ -97,9 +97,6 @@ DatasetInfo* read_dataset(const char *filename, uint32_t *total_vectors, filterI
 
 // Function to free the allocated dataset
 void free_dataset(DatasetInfo *dataset) {
-    for(int i = 0; i < dataset->num_vectors; i++){
-        free(dataset->datapoints[i].vectors);
-    }
     free(dataset->datapoints);
     free(dataset);
 }
@@ -190,9 +187,6 @@ QueryInfo* read_query_dataset(const char *filename, uint32_t *total_queries) {
 
 // Function to free the allocated query set
 void free_query_dataset(QueryInfo *queries) {
-    for(int i = 0; i < queries->num_queries; i++){
-        free(queries->queries[i].query_vector);
-    }
     free(queries->queries);
     free(queries);
 }

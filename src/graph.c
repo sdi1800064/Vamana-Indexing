@@ -439,7 +439,7 @@ int is_in_array(int *array, int size, int element) {
  * @param Lamda_size The size of Lamda.
  * @param L The limit on the number of points to consider.
  */
-void greedy_search(Graph *graph, float *Xq, int** start_index, int* start_index_size, int **V, int *V_size, int **Lamda, int *Lamda_size, int L, int query_filter) {
+void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_size, int **Lamda, int *Lamda_size, int L) {
 
     // Allocate initial space for V and Lamda
     *V = (int *)malloc(sizeof(int) * graph->num_points);
@@ -447,12 +447,10 @@ void greedy_search(Graph *graph, float *Xq, int** start_index, int* start_index_
     *Lamda = (int *)malloc(sizeof(int) * graph->num_points);
     *Lamda_size = 0;
 
-    for(int i = 0; i < *start_index_size; i++){
-        if(*start_index[i] != query_filter){
-            // Initialize Lamda with the start point
-            add_to_dynamic_array(Lamda, Lamda_size, *start_index[i]);
-        }
-    }
+    // Initialize Lamda with the start point
+    add_to_dynamic_array(Lamda, Lamda_size, start_index);
+
+
 
     // Create an int array that contains points that are in Lamda but not in V
     int *Lamda_minus_V;
