@@ -6,7 +6,7 @@
 #include <string.h>
 
 #include "../headers/graph.h"
-#include "../headers/fvecs.h"
+#include "../headers/dataset.h"
 #include "../headers/structs.h"
 
 

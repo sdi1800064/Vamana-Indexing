@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../headers/fvecs.h"
+#include "../headers/dataset.h"
 #include "../headers/graph.h"
 
 

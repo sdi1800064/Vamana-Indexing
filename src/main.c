@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "../headers/fvecs.h"
+#include "../headers/dataset.h"
 #include "../headers/graph.h"
 
 int main(int argc, char *argv[]) {

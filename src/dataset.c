@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "../headers/fvecs.h"
+#include "../headers/dataset.h"
 #include "../headers/graph.h"
 
 // Function to dynamically add a filter or update its count

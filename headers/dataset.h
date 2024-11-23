@@ -1,7 +1,7 @@
 // fvecs.h
 
-#ifndef FVEC_H
-#define FVEC_H
+#ifndef DATASET_H
+#define DATASET_H
 
 #include <stdio.h>
 #include "graph.h"
