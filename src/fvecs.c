@@ -46,15 +46,23 @@ DatasetInfo* read_dataset(const char *filename, uint32_t *total_vectors, filterI
     }
     *total_vectors = num_vectors;
 
-    // Allocate memory for the DatasetInfo array
-    DatasetInfo *dataset = (DatasetInfo *)malloc(num_vectors * sizeof(DatasetInfo));
+    // Allocate memory for the DatasetInfo structure
+    DatasetInfo *dataset = (DatasetInfo *)malloc(sizeof(DatasetInfo));
     if (!dataset) {
         perror("Memory allocation error");
         fclose(file);
         return NULL;
     }
-
     dataset->num_vectors = num_vectors;
+
+    // Allocate memory for the DataPoint array
+    dataset->datapoints = (DataPoint *)malloc(num_vectors * sizeof(DataPoint));
+    if (!dataset->datapoints) {
+        perror("Memory allocation error");
+        free(dataset);
+        fclose(file);
+        return NULL;
+    }
 
     // Define the vector size
     const size_t vector_size = (2 + 100) * sizeof(float); // 2 attributes + 100 dimensions
@@ -66,21 +74,21 @@ DatasetInfo* read_dataset(const char *filename, uint32_t *total_vectors, filterI
         // Read the entire vector into the buffer
         if (fread(buffer, vector_size, 1, file) != 1) {
             perror("Error reading vector data");
-            fclose(file);
+            free(dataset->datapoints);
             free(dataset);
+            fclose(file);
             return NULL;
         }
 
-        // Populate the DatasetInfo structure
-        dataset[i].num_vectors = num_vectors; // All instances share this information
-        dataset[i].category = buffer[0];
-        dataset[i].timestamp = buffer[1];
+        // Populate the DataPoint structure
+        dataset->datapoints[i].category = (int)buffer[0];
+        dataset->datapoints[i].timestamp = buffer[1];
         for (size_t j = 0; j < 100; j++) {
-            dataset[i].vectors[j] = buffer[j + 2];
+            dataset->datapoints[i].vectors[j] = buffer[j + 2];
         }
 
         // Update the filters with the category
-        add_or_increment_filter(filters, (int)dataset[i].category);
+        add_or_increment_filter(filters, dataset->datapoints[i].category);
     }
 
     fclose(file);
@@ -89,14 +97,18 @@ DatasetInfo* read_dataset(const char *filename, uint32_t *total_vectors, filterI
 
 // Function to free the allocated dataset
 void free_dataset(DatasetInfo *dataset) {
+    for(int i = 0; i < dataset->num_vectors; i++){
+        free(dataset->datapoints[i].vectors);
+    }
+    free(dataset->datapoints);
     free(dataset);
 }
 
 void print_dataset(DatasetInfo *dataset) {
     for (int i = 0; i < dataset->num_vectors; i++) {
-        printf("Vector %d: Category = %d, Timestamp = %f, Vectors = ", i, (int)dataset[i].category, dataset[i].timestamp);
+        printf("Vector %d: Category = %d, Timestamp = %f, Vectors = ", i, dataset->datapoints[i].category, dataset->datapoints[i].timestamp);
         for (int j = 0; j < 100; j++) {
-            printf("%f ", dataset[i].vectors[j]);
+            printf("%f ", dataset->datapoints[i].vectors[j]);
         }
         printf("\n");
     }
@@ -104,8 +116,8 @@ void print_dataset(DatasetInfo *dataset) {
 
 void cprint_dataset(DatasetInfo *dataset, int target_category) {
     for (int i = 0; i < dataset->num_vectors; i++) {
-        if(dataset[i].category == target_category){
-            printf("Vector %d: Category = %d\n", i, (int)dataset[i].category);
+        if(dataset->datapoints[i].category == target_category){
+            printf("Vector %d: Category = %d\n", i, dataset->datapoints[i].category);
         }
     }
 }
@@ -128,10 +140,20 @@ QueryInfo* read_query_dataset(const char *filename, uint32_t *total_queries) {
     }
     *total_queries = num_queries;
 
-    // Allocate memory for the QueryInfo array
-    QueryInfo *queries = (QueryInfo *)malloc(num_queries * sizeof(QueryInfo));
-    if (!queries) {
+    // Allocate memory for the QueryInfo structure
+    QueryInfo *query_info = (QueryInfo *)malloc(sizeof(QueryInfo));
+    if (!query_info) {
         perror("Memory allocation error");
+        fclose(file);
+        return NULL;
+    }
+    query_info->num_queries = num_queries;
+
+    // Allocate memory for the QueryPoint array
+    query_info->queries = (QueryPoint *)malloc(num_queries * sizeof(QueryPoint));
+    if (!query_info->queries) {
+        perror("Memory allocation error");
+        free(query_info);
         fclose(file);
         return NULL;
     }
@@ -147,36 +169,41 @@ QueryInfo* read_query_dataset(const char *filename, uint32_t *total_queries) {
         if (fread(buffer, query_size, 1, file) != 1) {
             perror("Error reading query data");
             fclose(file);
-            free(queries);
+            free(query_info->queries);
+            free(query_info);
             return NULL;
         }
 
-        // Populate the QueryInfo structure
-        queries[i].num_queries = num_queries; // All instances share this information
-        queries[i].query_type = buffer[0];
-        queries[i].v = buffer[1];
-        queries[i].l = buffer[2];
-        queries[i].r = buffer[3];
+        // Populate the QueryPoint structure
+        query_info->queries[i].query_type = (int)buffer[0];
+        query_info->queries[i].v = (int)buffer[1];
+        query_info->queries[i].l = buffer[2];
+        query_info->queries[i].r = buffer[3];
         for (size_t j = 0; j < 100; j++) {
-            queries[i].query_vector[j] = buffer[j + 4];
+            query_info->queries[i].query_vector[j] = buffer[j + 4];
         }
     }
 
     fclose(file);
-    return queries;
+    return query_info;
 }
 
 // Function to free the allocated query set
 void free_query_dataset(QueryInfo *queries) {
+    for(int i = 0; i < queries->num_queries; i++){
+        free(queries->queries[i].query_vector);
+    }
+    free(queries->queries);
     free(queries);
 }
 
 
 void print_query_dataset(QueryInfo *dataset) {
     for (int i = 0; i < dataset->num_queries; i++) {
-        printf("Vector %d: Query-Category = %d, Filter = %d, Timestamp = %f, Timestamp = %f, Vectors = ", i, (int)dataset[i].query_type, (int)dataset[i].v, dataset[i].l, dataset[i].r);
+        QueryPoint query = dataset->queries[i];
+        printf("Vector %d: Query-Category = %d, Filter = %d, Timestamp = %f, Timestamp = %f, Vectors = ", i, query.query_type, query.v, query.l, query.r);
         for (int j = 0; j < 100; j++) {
-            printf("%f ", dataset[i].query_vector[j]);
+            printf("%f ", query.query_vector[j]);
         }
         printf("\n");
     }
@@ -184,8 +211,9 @@ void print_query_dataset(QueryInfo *dataset) {
 
 void cprint_query_dataset(QueryInfo *dataset, int category) {
     for (int i = 0; i < dataset->num_queries; i++) {
-        if(dataset[i].v == category){
-            printf("Vector %d: Query-Category = %d, Filter = %d, Timestamp = %f, Timestamp = %f, Vectors = ", i, (int)dataset[i].query_type, (int)dataset[i].v, dataset[i].l, dataset[i].r);
+        QueryPoint query = dataset->queries[i];
+        if(query.v == category){
+            printf("Vector %d: Query-Category = %d, Filter = %d, Timestamp = %f, Timestamp = %f, Vectors = ", i, query.query_type, query.v, query.l, query.r);
             printf("\n");
         }
     }

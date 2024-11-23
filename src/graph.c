@@ -6,25 +6,27 @@
 #include <string.h>
 
 #include "../headers/graph.h"
+#include "../headers/fvecs.h"
+#include "../headers/structs.h"
+
 
 
 /**
- * Creates a random graph with the given number of vectors and dimensions
- * and random edges within the given maximum number of edges per point.
- * 
- * @param base_vectors The 2D array of vectors to use as points in the graph
- * @param base_num_dimensions The number of dimensions of each vector
- * @param max_edges The maximum number of edges each point can have
- * @param base_num_points The number of vectors in the graph
- * @return A pointer to the created graph
+ * Initializes a graph with the given dataset and maximum number of edges
+ *
+ * @param dataset The dataset to use for initializing the graph
+ * @param max_edges The maximum number of edges that each point in the graph can have
+ * @return A pointer to the newly created graph
  */
-Graph* create_random_graph(float **base_vectors, int base_num_dimensions, int max_edges, int base_num_points) {
+Graph* initialise_graph(DatasetInfo* dataset, int max_edges) {
     Graph* graph = (Graph*)malloc(sizeof(Graph));
-    
+
     if (!graph) {
         printf("Memory allocation failed!\n");
         exit(1);
     }
+    int base_num_points = dataset->num_vectors;
+    int base_num_dimensions = 100;
 
     graph->points = (Point*)malloc(base_num_points * sizeof(Point));
 
@@ -36,9 +38,10 @@ Graph* create_random_graph(float **base_vectors, int base_num_dimensions, int ma
     graph->num_points = base_num_points;
     graph->num_dimensions = base_num_dimensions;
 
-    // Initialize points with vector values
+    // Initialize points with dataset values
     for (int i = 0; i < base_num_points; i++) {
         graph->points[i].index = i;
+        graph->points[i].category = dataset->datapoints[i].category;
 
         // Allocate memory for coordinates
         graph->points[i].coordinates = (float*)malloc(base_num_dimensions * sizeof(float));
@@ -47,37 +50,16 @@ Graph* create_random_graph(float **base_vectors, int base_num_dimensions, int ma
             exit(1);
         }
 
-        // Allocate memory for edges
-        graph->points[i].edges = (int*)malloc(max_edges * sizeof(int));
-        if (!graph->points[i].edges) {
-            printf("Memory allocation failed!\n");
-            exit(1);
-        }
-
-        // Add random edges to every point untill they have max_edges, no duplicates and no self-loops
-        graph->points[i].edge_count = 0; // No edges initially
-        while(graph->points[i].edge_count < max_edges) {
-            int edge = rand() % base_num_points;
-            if (edge != i && !arrayContains(graph->points[i].edges, graph->points[i].edge_count, edge)) {
-                graph->points[i].edges[graph->points[i].edge_count] = edge;
-                graph->points[i].edge_count++;
-            }
-        }
-
         // Initialize coordinates
-        for(int j = 0; j < base_num_dimensions; j++) {
-            graph->points[i].coordinates[j] = base_vectors[i][j];
+        for (int j = 0; j < base_num_dimensions; j++) {
+            graph->points[i].coordinates[j] = dataset->datapoints[i].vectors[j];
         }
-        
-        // if(i % 100 == 0){
-        //     printf("Point %d Initialized\n ", i);
-        // }
-    }
 
-    for (int i = 0; i < base_num_points; i++) {
-        free(base_vectors[i]);
+        // Initialize edges with no connections
+        graph->points[i].edges = malloc(max_edges * sizeof(int));
+        graph->points[i].edge_count = 0;
     }
-    free(base_vectors);
+    free_dataset(dataset);
 
     return graph;
 }
@@ -457,7 +439,7 @@ int is_in_array(int *array, int size, int element) {
  * @param Lamda_size The size of Lamda.
  * @param L The limit on the number of points to consider.
  */
-void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_size, int **Lamda, int *Lamda_size, int L) {
+void greedy_search(Graph *graph, float *Xq, int** start_index, int* start_index_size, int **V, int *V_size, int **Lamda, int *Lamda_size, int L, int query_filter) {
 
     // Allocate initial space for V and Lamda
     *V = (int *)malloc(sizeof(int) * graph->num_points);
@@ -465,8 +447,12 @@ void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_siz
     *Lamda = (int *)malloc(sizeof(int) * graph->num_points);
     *Lamda_size = 0;
 
-    // Initialize Lamda with the start point
-    add_to_dynamic_array(Lamda, Lamda_size, start_index);
+    for(int i = 0; i < *start_index_size; i++){
+        if(*start_index[i] != query_filter){
+            // Initialize Lamda with the start point
+            add_to_dynamic_array(Lamda, Lamda_size, *start_index[i]);
+        }
+    }
 
     // Create an int array that contains points that are in Lamda but not in V
     int *Lamda_minus_V;

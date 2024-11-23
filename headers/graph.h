@@ -2,54 +2,12 @@
 #define GRAPH_H
 
 #include <stdio.h>
-#include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
 
+#include "../headers/structs.h"
+
 #define INF 1e9         // A large number to represent "infinity"
-
-// ==================== Structures ==================== //
-
-// Define a struct for the result
-typedef struct {
-    uint32_t num_vectors;
-    float category;  // Array for discretized categorical attribute C
-    float timestamp;  // Array for normalized timestamp attribute T
-    float vectors[100];     // Array for the remaining 100-dimensional vectors
-} DatasetInfo;
-
-// Define the QueryInfo structure
-typedef struct {
-    uint32_t num_queries;    // Number of queries
-    float query_type;        // Query type (0, 1, 2, or 3)
-    float v;                 // Specific query value for categorical attribute (or -1)
-    float l;                 // Lower bound for timestamp attribute (or -1)
-    float r;                 // Upper bound for timestamp attribute (or -1)
-    float query_vector[100]; // 100-dimensional query vector
-} QueryInfo;
-
-typedef struct{
-    int *filters[2];
-    int num_indexes;
-    int filters_size;
-} filterInfo;
-
-// Struct for a single point
-typedef struct {
-    int index;              // Index of the point
-    float *coordinates;     // Vector coordinates
-    int edge_count;         // Current number of Outgoing edges
-    int *edges;            // Array of Outgoing edges (connections to other points)
-} Point;
-
-// Struct for the whole graph
-typedef struct {
-    Point *points; // Array of points
-    int num_dimensions; // Number of dimensions of each point
-    int num_points; // Number of vectors in the graph
-} Graph;
-
-// ==================== Structures ==================== //
 
 // Function prototypes
 double squared_euclidean_distance(float *p, float *q, int n);
