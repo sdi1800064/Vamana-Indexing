@@ -117,19 +117,8 @@ void print_neighbors(Neighbor **all_neighbors, int num_queries) {
 
 int main(int argc, char *argv[]) {
 
-    float **base_vectors;
     uint32_t base_num_vectors;
-    int base_num_dimensions;
-
-    // Variables for Query file
-    float **query_vectors;
     int query_num_vectors;
-    int query_num_dimensions;
-
-    // Variables for GroundTruth
-    int **groundtruth_vectors;
-    int groundtruth_num_vectors;
-    int groundtruth_num_dimensions;
     filterInfo *filters = NULL;
 
 
