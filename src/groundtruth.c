@@ -12,37 +12,29 @@ typedef struct {
 } Neighbor;
 
 
-void save_neighbors_to_file(const char *filename, Neighbor **all_neighbors, int num_queries, int num_neighbors,
-                            int num_dimensions) {
+#include <stdio.h>
+#include <stdlib.h>
+
+void save_neighbors_to_file(const char *filename, Neighbor **neighbours, int num_vectors, int dimension) {
     FILE *file = fopen(filename, "wb");
     if (!file) {
         perror("Error opening file");
         return;
     }
 
-    // Write the number of dimensions
-    if (fwrite(&num_dimensions, sizeof(int), 1, file) != 1) {
-        perror("Error writing number of dimensions");
-        fclose(file);
-        return;
-    }
+    for (int i = 0; i < num_vectors; i++) {
+        // Write the dimension
+        if (fwrite(&dimension, sizeof(int), 1, file) != 1) {
+            perror("Error writing dimension");
+            fclose(file);
+            return;
+        }
 
-    // Write each set of neighbors to the file
-    for (int q = 0; q < num_queries; q++) {
-        for (int i = 0; i < num_neighbors; i++) {
-            // Write the index
-            if (fwrite(&all_neighbors[q][i].index, sizeof(int), 1, file) != 1) {
-                perror("Error writing neighbor index");
-                fclose(file);
-                return;
-            }
-
-            // Write the distance
-            if (fwrite(&all_neighbors[q][i].distance, sizeof(float), 1, file) != 1) {
-                perror("Error writing neighbor distance");
-                fclose(file);
-                return;
-            }
+        // Write the vector elements
+        if (fwrite(&(neighbours[i]->index), sizeof(int), dimension, file) != 1) {
+            perror("Error writing vector elements");
+            fclose(file);
+            return;
         }
     }
 
@@ -146,7 +138,7 @@ int main(int argc, char *argv[]) {
     int actual_neighbors_count;
     Neighbor **all_neighbors = find_closest_neighbors(dataset_info, query_info, &actual_neighbors_count);
     print_neighbors(all_neighbors, query_info->num_queries);
-    save_neighbors_to_file("neighbors.ivecs", all_neighbors, query_info->num_queries, actual_neighbors_count, 1);
+    save_neighbors_to_file("neighbors.ivecs", all_neighbors, query_info->num_queries,  1);
     free_dataset(dataset_info);
     free_query_dataset(query_info);
 
