@@ -4,8 +4,6 @@
 #include "string.h"
 #include "structs.h"
 #include "stdlib.h"
-#include "math.h"
-
 #define K 100
 
 typedef struct {
