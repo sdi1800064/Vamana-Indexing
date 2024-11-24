@@ -5,6 +5,7 @@
 #include "structs.h"
 #include "stdlib.h"
 #include "math.h"
+
 #define K 100
 
 typedef struct {
@@ -13,7 +14,8 @@ typedef struct {
 } Neighbor;
 
 
-void save_neighbors_to_file(const char *filename, Neighbor **all_neighbors, int num_queries, int num_neighbors, int num_dimensions) {
+void save_neighbors_to_file(const char *filename, Neighbor **all_neighbors, int num_queries, int num_neighbors,
+                            int num_dimensions) {
     FILE *file = fopen(filename, "wb");
     if (!file) {
         perror("Error opening file");
@@ -50,15 +52,15 @@ void save_neighbors_to_file(const char *filename, Neighbor **all_neighbors, int 
 }
 
 int compare_neighbors(const void *a, const void *b) {
-    Neighbor *neighborA = (Neighbor *)a;
-    Neighbor *neighborB = (Neighbor *)b;
+    Neighbor *neighborA = (Neighbor *) a;
+    Neighbor *neighborB = (Neighbor *) b;
     return (neighborA->distance > neighborB->distance) - (neighborA->distance < neighborB->distance);
 }
 
-Neighbor** find_closest_neighbors(DatasetInfo *dataset_info, QueryInfo *query_info, int *actual_neighbors_count) {
-    Neighbor **all_neighbors = (Neighbor **)malloc(query_info->num_queries * sizeof(Neighbor *));
+Neighbor **find_closest_neighbors(DatasetInfo *dataset_info, QueryInfo *query_info, int *actual_neighbors_count) {
+    Neighbor **all_neighbors = (Neighbor **) malloc(query_info->num_queries * sizeof(Neighbor *));
     for (int q = 0; q < query_info->num_queries; q++) {
-        all_neighbors[q] = (Neighbor *)malloc(K * sizeof(Neighbor));
+        all_neighbors[q] = (Neighbor *) malloc(K * sizeof(Neighbor));
     }
     int count = 0;
 
@@ -74,10 +76,11 @@ Neighbor** find_closest_neighbors(DatasetInfo *dataset_info, QueryInfo *query_in
         for (int i = 0; i < dataset_info->num_vectors; i++) {
             if (query.query_type == 1) {
                 if (dataset_info->datapoints[i].category == query.v) {
-                    float distance = squared_euclidean_distance(query.query_vector, dataset_info->datapoints[i].vectors, 100);
-                    if (distance < all_neighbors[q][K-1].distance) {
-                        all_neighbors[q][K-1].index = i;
-                        all_neighbors[q][K-1].distance = distance;
+                    float distance = squared_euclidean_distance(query.query_vector, dataset_info->datapoints[i].vectors,
+                                                                100);
+                    if (distance < all_neighbors[q][K - 1].distance) {
+                        all_neighbors[q][K - 1].index = i;
+                        all_neighbors[q][K - 1].distance = distance;
                         qsort(all_neighbors[q], K, sizeof(Neighbor), compare_neighbors);
                         if (count < K) {
                             count++;
@@ -85,10 +88,11 @@ Neighbor** find_closest_neighbors(DatasetInfo *dataset_info, QueryInfo *query_in
                     }
                 }
             } else {
-                float distance = squared_euclidean_distance(query.query_vector, dataset_info->datapoints[i].vectors, 100);
-                if (distance < all_neighbors[q][K-1].distance) {
-                    all_neighbors[q][K-1].index = i;
-                    all_neighbors[q][K-1].distance = distance;
+                float distance = squared_euclidean_distance(query.query_vector, dataset_info->datapoints[i].vectors,
+                                                            100);
+                if (distance < all_neighbors[q][K - 1].distance) {
+                    all_neighbors[q][K - 1].index = i;
+                    all_neighbors[q][K - 1].distance = distance;
                     qsort(all_neighbors[q], K, sizeof(Neighbor), compare_neighbors);
                     if (count < K) {
                         count++;
@@ -111,20 +115,19 @@ void print_neighbors(Neighbor **all_neighbors, int num_queries) {
     }
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 
-    float** base_vectors;
+    float **base_vectors;
     uint32_t base_num_vectors;
     int base_num_dimensions;
 
     // Variables for Query file
-    float** query_vectors;
+    float **query_vectors;
     int query_num_vectors;
     int query_num_dimensions;
 
     // Variables for GroundTruth
-    int** groundtruth_vectors;
+    int **groundtruth_vectors;
     int groundtruth_num_vectors;
     int groundtruth_num_dimensions;
     filterInfo *filters = NULL;
@@ -146,7 +149,7 @@ int main(int argc, char *argv[])
             groundtruth_file_name = argv[i + 1];
             i++;
         }
-}
+    }
 
 
     DatasetInfo *dataset_info = read_dataset(base_file_name, &base_num_vectors, filters);
