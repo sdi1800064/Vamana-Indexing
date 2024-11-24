@@ -427,24 +427,6 @@ void printArray(int *array, int array_size) {
 
 
 /**
- * Checks if an element is present in an array.
- *
- * @param array The array to be searched
- * @param size The size of the array
- * @param element The element to be searched
- * @return 1 if the element is present in the array, 0 otherwise.
- */
-int is_in_array(int *array, int size, int element) {
-    for (int i = 0; i < size; i++) {
-        if (array[i] == element) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-
-/**
  * Performs a greedy search on the graph to find the L closest points to a given query point Xq.
  *
  * The algorithm works by selecting the point in Lamda that is closest to Xq, adding it to V, and then adding the neighbors of that point to Lamda.

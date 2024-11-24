@@ -23,7 +23,6 @@ void filtered_Robust_prune(Graph *graph, int p_index, int *V, int V_size, float 
 
 int *get_the_difference(int *Lamda, int Lamda_size, int *V, int V_size, int *Lamda_minus_V_size);
 
-int is_in_array(int *array, int size, int element);
 void swap(int *a, int *b);
 void swap_float(float *a, float *b);
 void sort_array(Graph *graph, int *l_temp, int l_temp_size, float *Xq);
