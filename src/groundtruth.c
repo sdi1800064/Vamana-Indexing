@@ -12,9 +12,6 @@ typedef struct {
 } Neighbor;
 
 
-#include <stdio.h>
-#include <stdlib.h>
-
 void save_neighbors_to_file(const char *filename, Neighbor **neighbours, int num_vectors, int dimension) {
     FILE *file = fopen(filename, "wb");
     if (!file) {
