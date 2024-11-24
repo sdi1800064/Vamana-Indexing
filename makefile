@@ -43,7 +43,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Rule to compile and link the test executable
-test: $(SRC_DIR)/test.c $(SRC_DIR)/dataset.c
+test: test.c $(SRC_DIR)/dataset.c
 	$(CC) -o test $(SRC_DIR)/test.c $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(CFLAGS) $(LDFLAGS)
 
 # Clean rule to remove object files and executables

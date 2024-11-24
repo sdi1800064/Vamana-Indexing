@@ -30,7 +30,7 @@ void add_or_increment_filter(filterInfo *filters, int category) {
 }
 
 // Function to read the dataset
-DatasetInfo* read_dataset(const char *filename, uint32_t *total_vectors, filterInfo *filters) {
+DatasetInfo* read_dataset(const char *filename, filterInfo *filters) {
     FILE *file = fopen(filename, "rb");
     if (!file) {
         perror("Error opening file");
@@ -44,7 +44,6 @@ DatasetInfo* read_dataset(const char *filename, uint32_t *total_vectors, filterI
         fclose(file);
         return NULL;
     }
-    *total_vectors = num_vectors;
 
     // Allocate memory for the DatasetInfo structure
     DatasetInfo *dataset = (DatasetInfo *)malloc(sizeof(DatasetInfo));
@@ -53,7 +52,7 @@ DatasetInfo* read_dataset(const char *filename, uint32_t *total_vectors, filterI
         fclose(file);
         return NULL;
     }
-    dataset->num_vectors = num_vectors;
+    dataset->num_vectors = (int)num_vectors;
 
     // Allocate memory for the DataPoint array
     dataset->datapoints = (DataPoint *)malloc(num_vectors * sizeof(DataPoint));
@@ -65,10 +64,10 @@ DatasetInfo* read_dataset(const char *filename, uint32_t *total_vectors, filterI
     }
 
     // Define the vector size
-    const size_t vector_size = (2 + 100) * sizeof(float); // 2 attributes + 100 dimensions
+    const int vector_size = (2 + 100) * sizeof(float); // 2 attributes + 100 dimensions
 
     // Read each vector from the file
-    for (uint32_t i = 0; i < num_vectors; i++) {
+    for (int i = 0; i < dataset->num_vectors; i++) {
         float buffer[102];
 
         // Read the entire vector into the buffer
@@ -83,7 +82,7 @@ DatasetInfo* read_dataset(const char *filename, uint32_t *total_vectors, filterI
         // Populate the DataPoint structure
         dataset->datapoints[i].category = (int)buffer[0];
         dataset->datapoints[i].timestamp = buffer[1];
-        for (size_t j = 0; j < 100; j++) {
+        for (int j = 0; j < 100; j++) {
             dataset->datapoints[i].vectors[j] = buffer[j + 2];
         }
 
@@ -121,7 +120,7 @@ void cprint_dataset(DatasetInfo *dataset, int target_category) {
 
 
 // Function to read the query set
-QueryInfo* read_query_dataset(const char *filename, uint32_t *total_queries) {
+QueryInfo* read_query_dataset(const char *filename) {
     FILE *file = fopen(filename, "rb");
     if (!file) {
         perror("Error opening file");
@@ -135,7 +134,6 @@ QueryInfo* read_query_dataset(const char *filename, uint32_t *total_queries) {
         fclose(file);
         return NULL;
     }
-    *total_queries = num_queries;
 
     // Allocate memory for the QueryInfo structure
     QueryInfo *query_info = (QueryInfo *)malloc(sizeof(QueryInfo));
@@ -144,7 +142,7 @@ QueryInfo* read_query_dataset(const char *filename, uint32_t *total_queries) {
         fclose(file);
         return NULL;
     }
-    query_info->num_queries = num_queries;
+    query_info->num_queries = (int)num_queries;
 
     // Allocate memory for the QueryPoint array
     query_info->queries = (QueryPoint *)malloc(num_queries * sizeof(QueryPoint));

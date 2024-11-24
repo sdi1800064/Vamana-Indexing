@@ -14,21 +14,6 @@ int main(int argc, char *argv[]) {
     // Seed the random number generator with the current time
     srand((unsigned int)t);
     
-    // Variables for Base file
-    float** base_vectors;
-    int base_num_vectors;
-    int base_num_dimensions;
-
-    // Variables for Query file
-    float** query_vectors;
-    int query_num_vectors;
-    int query_num_dimensions;
-
-    // Variables for GroundTruth
-    int** groundtruth_vectors;
-    int groundtruth_num_vectors;
-    int groundtruth_num_dimensions;
-    
     printf("Starting...\n");
     // Initialize variables
     char *base_file_name = NULL;
@@ -102,57 +87,44 @@ int main(int argc, char *argv[]) {
     //     printf("Error: Could not create output.txt file!\n");
     //     return 1;
     // }
-
-    // Read the base_vectors from the file
-    read_fvecs(base_file_name, &base_vectors, &base_num_vectors, &base_num_dimensions);
-    printf("Base-Vector dimensionality: %d\n", base_num_dimensions);
-    printf("Number of Base-Vectorts: %d\n", base_num_vectors);
-
-    // Read the query_vectors from the file
-    read_fvecs(query_file_name, &query_vectors, &query_num_vectors, &query_num_dimensions);
-    printf("Query-Vector dimensionality: %d\n", query_num_dimensions);
-    printf("Number of Query-Vectorts: %d\n", query_num_vectors);
-
-    //============== UNCOMMENT THIS TO PRINT THE QUERY POINTS =================//
-    // printf("Printing query vector...\n");
-    // fprintFloatVectors(query_vectors, query_num_vectors, query_num_dimensions, outputfd);
-
-    // Read the groundtruth_vectors from the file
-    read_ivecs(groundtruth_file_name, &groundtruth_vectors, &groundtruth_num_vectors, &groundtruth_num_dimensions);
-    printf("Number of Groundtruth indexes: %d\n", groundtruth_num_dimensions);
-    printf("Groundtruths for queries: %d\n", groundtruth_num_vectors);
-    // fprintIntVectors(groundtruth_vectors, groundtruth_num_vectors, groundtruth_num_dimensions, outputfd);
-
-
-    // ============== CREATING RANDOM GRAPH ================= //
-    Graph *base_graph = create_random_graph(base_vectors, base_num_dimensions, R, base_num_vectors);
-
-
-    // ------ UNCOMMENT THIS TO PRINT THE RANDOM GRAPH ------ //
-    // fprintf(outputfd, "Printing random graph in output file...\n");
-    // fprint_graph(base_graph, outputfd);
-
-    // printf("printed graph to the output file\n");
-
-
-    // ============== RECALL BEFORE VAMANA INDEXING ================= //
     
-    int *K_CLOSEST[query_num_vectors];
-    int *V = NULL;
-    int V_size = 0;
-    int lamda_size = 0;
-    float recall = 0.0;
+    // Initialise the base Dataset
+    filterInfo filters;
+    filters.filters[0] = (int*)malloc(sizeof(int)); // filter index
+    filters.filters[1] = (int*)malloc(sizeof(int)); // count of points with that filter
+    filters.filters_size = 0;
+    DatasetInfo* dataSet;
+    dataSet = read_dataset(base_file_name, &filters);
+
+    // Initialise the base Dataset
+    QueryInfo* querySet;
+    querySet = read_query_dataset(query_file_name);
 
 
-    int total_count = 0;
-    int count = 0;
-    int prediction_count = 0;
+    // ============== VAMANA INDEXING ================= //
 
-    // =============== UUNCOMMENT TO PRINT THE RECALL BEFORE VAMANA INDEXING ================== //
+    Graph *graph = filtered_vamana_indexing(dataSet, L, a, R);
+
+    // ============ RECALL AFTER VAMANA INDEXING ============= //
+
+    // printf("Calculating recall..\n");
+
+
+    // int *K_CLOSEST[query_num_vectors];
+    // int *V = NULL;
+    // int V_size = 0;
+    // int lamda_size = 0;
+    // float recall = 0.0;
+
+
+    // int total_count = 0;
+    // int count = 0;
+    // int prediction_count = 0;
+    // count = 0;
     // for(int i = 0; i < query_num_vectors; i++) {
     //     K_CLOSEST[i] = (int*)malloc(sizeof(int));
     //     int random_graph_index = rand() % base_num_vectors;
-    //     greedy_search(base_graph, query_vectors[i], random_graph_index, &V, &V_size, &K_CLOSEST[i], &lamda_size, L, k);
+    //     greedy_search(base_graph, query_vectors[i], random_graph_index, &V, &V_size, &K_CLOSEST[i], &lamda_size, L);
     //     for(int j = 0; j < k; j++) {
     //         int predicted_index = K_CLOSEST[i][j];
     //         for(int l = 0; l < groundtruth_num_vectors; l++) {
@@ -163,57 +135,19 @@ int main(int argc, char *argv[]) {
     //         }
     //     }
     //     // printf("Query %d: Found %d / %d\n", i, count, k);
-    //     total_count += count;
     //     recall += count / k;
+    //     total_count += count;
     //     count = 0;
+    //     free(K_CLOSEST[i]);
     // }
-    // int prediction_count = k * query_num_vectors;
-    // printf("Found %d / %d before\n", total_count, prediction_count);
-    // recall = (float)total_count / prediction_count;
+
+    // free(V);
+    // prediction_count = k * query_num_vectors;
+    // recall = (float) total_count / prediction_count;
+    // printf("Found %d / %d\n", total_count, prediction_count);
     // printf("Recall: %.3f%%\n", recall*100);
 
-    // ============== VAMANA INDEXING ================= //
-
-    vamana_indexing(base_graph, L, a, R);
-
-    // ============ RECALL AFTER VAMANA INDEXING ============= //
-
-    printf("= Calculating recall..\n");
-
-    V = NULL;
-    V_size = 0;
-    lamda_size = 0;
-    recall = 0.0;
-
-    total_count = 0;
-    count = 0;
-    for(int i = 0; i < query_num_vectors; i++) {
-        K_CLOSEST[i] = (int*)malloc(sizeof(int));
-        int random_graph_index = rand() % base_num_vectors;
-        greedy_search(base_graph, query_vectors[i], random_graph_index, &V, &V_size, &K_CLOSEST[i], &lamda_size, L);
-        for(int j = 0; j < k; j++) {
-            int predicted_index = K_CLOSEST[i][j];
-            for(int l = 0; l < groundtruth_num_vectors; l++) {
-                if(predicted_index == groundtruth_vectors[i][l]) {
-                    count++;
-                    break;
-                }
-            }
-        }
-        // printf("Query %d: Found %d / %d\n", i, count, k);
-        recall += count / k;
-        total_count += count;
-        count = 0;
-        free(K_CLOSEST[i]);
-    }
-
-    free(V);
-    prediction_count = k * query_num_vectors;
-    recall = (float) total_count / prediction_count;
-    printf("Found %d / %d\n", total_count, prediction_count);
-    printf("Recall: %.3f%%\n", recall*100);
-
-
+    free_graph(graph);
     printf("Exiting the program..\n");
 
     // Close the file
