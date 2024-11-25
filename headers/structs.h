@@ -13,7 +13,7 @@ typedef struct {
 
 // Define a struct for the result
 typedef struct {
-    uint32_t num_vectors;
+    int num_vectors;
     DataPoint *datapoints;
 } DatasetInfo;
 
@@ -28,13 +28,12 @@ typedef struct {
 
 // Define the QueryInfo structure
 typedef struct {
-    uint32_t num_queries;    // Number of queries
+    int num_queries;    // Number of queries
     QueryPoint *queries;
 } QueryInfo;
 
 typedef struct{
     int *filters[2];
-    int num_indexes;
     int filters_size;
 } filterInfo;
 
