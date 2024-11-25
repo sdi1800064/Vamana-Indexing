@@ -1,5 +1,5 @@
 #include <float.h>
-#include "../headers/fvecs.h"
+#include "../headers/dataset.h"
 #include "stdio.h"
 #include "string.h"
 #include "structs.h"
@@ -127,15 +127,15 @@ int main(int argc, char *argv[]) {
         }
     }
 
-
-    DatasetInfo *dataset_info = read_dataset(base_file_name, &base_num_vectors, filters);
-    QueryInfo *query_info = read_query_dataset(query_file_name, &query_num_vectors);
+    filterInfo *filters1 = (filterInfo *) malloc(sizeof(filterInfo));
+    DatasetInfo *dataset_info = read_dataset(base_file_name, filters1);
+    QueryInfo *query_info = read_query_dataset(query_file_name);
     print_query_dataset(query_info);
     print_dataset(dataset_info);
     int actual_neighbors_count;
     Neighbor **all_neighbors = find_closest_neighbors(dataset_info, query_info, &actual_neighbors_count);
     print_neighbors(all_neighbors, query_info->num_queries);
-    save_neighbors_to_file("neighbors.ivecs", all_neighbors, query_info->num_queries,  1);
+    save_neighbors_to_file("neighbors.ivecs", all_neighbors, query_info->num_queries,  K);
     free_dataset(dataset_info);
     free_query_dataset(query_info);
 
