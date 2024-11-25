@@ -6,7 +6,7 @@
 #include <string.h>
 
 #include "../headers/graph.h"
-#include "../headers/fvecs.h"
+#include "../headers/dataset.h"
 #include "../headers/structs.h"
 
 
@@ -64,6 +64,15 @@ Graph* initialise_graph(DatasetInfo* dataset, int max_edges) {
     return graph;
 }
 
+// Free the memory allocated for the graph
+void free_graph(Graph* graph) {
+    for (int i = 0; i < graph->num_points; i++) {
+        free(graph->points[i].coordinates);
+        free(graph->points[i].edges);
+    }
+    free(graph->points);
+    free(graph);
+}
 
 /**
  * Function to print the graph coordinates for debugging
@@ -196,7 +205,7 @@ int edgeExists(Point *point, int toIndex) {
  * @param a The pruning parameter
  * @param R The maximum number of neighbors of p
  */
-void robustPrune(Graph *graph, int p_index, int *V, int V_size, float a, int R) {
+void filtered_Robust_prune(Graph *graph, int p_index, int *V, int V_size, float a, int R) {
 
     // add to V all the neighbors of p and remove p from v if it exists
     for (int i = 0; i < graph->points[p_index].edge_count; i++) {
@@ -215,7 +224,7 @@ void robustPrune(Graph *graph, int p_index, int *V, int V_size, float a, int R) 
         V_size--;
     }
 
-    // Set reset edges of p
+    // Reset edges of p
     for (int i = 0; i < graph->points[p_index].edge_count; i++) {
         graph->points[p_index].edges[i] = -1;
     }
@@ -249,6 +258,17 @@ void robustPrune(Graph *graph, int p_index, int *V, int V_size, float a, int R) 
 
         // for every point p' in V
         for (int i = 0; i < V_size; i++) {
+            // if Fp' ^ Fp !C Fp* then continue ( since we only have one filter we check
+            //                                    if the filter of p' is the same as the filter of p
+            //                                    and the same as the filter of p* )
+            int F_p_prime = graph->points[V[i]].category;
+            int F_p = graph->points[p_index].category;
+            int F_p_star = p_star->category;
+
+            if ( F_p_prime == F_p && F_p_prime == F_p_star ){
+                continue;
+            }
+
             // if a * d(p*, p') <= d(p, p') then remove p' from V
             // d(p*, p') = squared_euclidean_distance(graph->points[V[i]].coordinates, p_star->coordinates, graph->num_dimensions
             float DISTANCE_PSTAR_PPRIME = squared_euclidean_distance(p_star->coordinates, graph->points[V[i]].coordinates, graph->num_dimensions);
@@ -407,24 +427,6 @@ void printArray(int *array, int array_size) {
 
 
 /**
- * Checks if an element is present in an array.
- *
- * @param array The array to be searched
- * @param size The size of the array
- * @param element The element to be searched
- * @return 1 if the element is present in the array, 0 otherwise.
- */
-int is_in_array(int *array, int size, int element) {
-    for (int i = 0; i < size; i++) {
-        if (array[i] == element) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-
-/**
  * Performs a greedy search on the graph to find the L closest points to a given query point Xq.
  *
  * The algorithm works by selecting the point in Lamda that is closest to Xq, adding it to V, and then adding the neighbors of that point to Lamda.
@@ -439,7 +441,7 @@ int is_in_array(int *array, int size, int element) {
  * @param Lamda_size The size of Lamda.
  * @param L The limit on the number of points to consider.
  */
-void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_size, int **Lamda, int *Lamda_size, int L) {
+void filtered_greedy_search(Graph *graph, float *Xq, int* start_index, int start_index_size, int **V, int *V_size, int **Lamda, int *Lamda_size, int L, int query_filter) {
 
     // Allocate initial space for V and Lamda
     *V = (int *)malloc(sizeof(int) * graph->num_points);
@@ -447,9 +449,14 @@ void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_siz
     *Lamda = (int *)malloc(sizeof(int) * graph->num_points);
     *Lamda_size = 0;
 
-    // Initialize Lamda with the start point
-    add_to_dynamic_array(Lamda, Lamda_size, start_index);
 
+    // for s ε S : if Fs ^ Fx != 0 then add s to Lamda
+    for(int i = 0 ; i < start_index_size; i++) {
+        if(graph->points[start_index[i]].category == query_filter || query_filter == -1) {
+            // Initialize Lamda with the start point
+            add_to_dynamic_array(Lamda, Lamda_size, start_index[i]);
+        }
+    }
 
 
     // Create an int array that contains points that are in Lamda but not in V
@@ -481,6 +488,23 @@ void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_siz
 
         // Add p* to V
         add_to_dynamic_array(V, V_size, p_star->index);
+
+        // Copy the current neighbors of p* to a temp array
+        int *temp_neighbors = (int *)malloc(sizeof(int) * p_star->edge_count);
+        int temp_neighbors_size = p_star->edge_count;
+        memcpy(temp_neighbors, p_star->edges, sizeof(int) * p_star->edge_count); 
+
+        p_star->edge_count = 0;       
+
+        // Keep the neighbors of p* that have at least one common filter with Xq and are not visited
+        for (int i = 0; i < temp_neighbors_size; i++) {
+            Point *neighbor = &graph->points[temp_neighbors[i]];
+            if (neighbor->category == query_filter || query_filter == -1) {
+                addEdge(p_star, neighbor->index);
+            }
+        }
+
+        free(temp_neighbors);
 
         // Add the neighbors of p* to Lamda
         for (int i = 0; i < p_star->edge_count; i++) {
@@ -671,9 +695,12 @@ void check_for_duplicates(int *array, int size) {
  * @param a The pruning parameter that influences the robustness of pruning.
  * @param R The maximum number of neighbors allowed for a point after pruning.
  */
-void vamana_indexing(Graph *graph, int L, float a, int R) {
+Graph* filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R) {
 
     printf("Starting Vamana Indexing\n");
+
+    Graph *graph = initialise_graph(dataset, R);
+    printf("Graph initialised\n");
 
     // Calculating the medoid
     // ======= CHANGE THE PERCENTAGE OF THE SAMPLES HERE ======== //
@@ -685,6 +712,7 @@ void vamana_indexing(Graph *graph, int L, float a, int R) {
     int medoid_index = calculate_medoid(graph, sample_point_indexes, num_sample_points);
     printf("Medoid index: %d\n", medoid_index);
 
+
     // traverse the graph in a random way without repetitions
     bool *shuffled_point_indexes = (bool *)calloc(graph->num_points, sizeof(bool));
     int s_index;
@@ -693,6 +721,11 @@ void vamana_indexing(Graph *graph, int L, float a, int R) {
     int *lamda = NULL;
     int lamda_size = 0;
     int V_size = 0;
+
+    int starting_points[128];
+    for(i = 0; i < 128; i++) {
+        starting_points[i] = rand() % graph->num_points;
+    }
     
     while(i < graph->num_points) {
         s_index = rand() % graph->num_points;
@@ -700,11 +733,16 @@ void vamana_indexing(Graph *graph, int L, float a, int R) {
             shuffled_point_indexes[s_index] = true;
             // printf("Indexing point %d\n", s_index);
 
+            // Set as the starting index the node that is at the starting_points[category]
+            int *S_Fx_si = malloc(sizeof(int));
+            S_Fx_si[0] = starting_points[graph->points[s_index].category];
+            int sp_size = 1;
+
             // =============== GREEDY SEARCH ================ //
-            greedy_search(graph, graph->points[s_index].coordinates, medoid_index, &V, &V_size, &lamda, &lamda_size, L);
+            filtered_greedy_search(graph, graph->points[s_index].coordinates, S_Fx_si, sp_size, &V, &V_size, &lamda, &lamda_size, L, graph->points[s_index].category);
 
             // =============== ROBUST PRUNE ================ //
-            robustPrune(graph, s_index, V, V_size, a, R);
+            filtered_Robust_prune(graph, s_index, V, V_size, a, R);
 
             int *new_V = NULL;
             int new_V_size = 0;
@@ -729,7 +767,7 @@ void vamana_indexing(Graph *graph, int L, float a, int R) {
                     add_to_dynamic_array(&new_V, &new_V_size, s_index);
 
                     // run robustPrune(p', new_V, a, R)
-                    robustPrune(graph, P_PRIME->index, new_V, new_V_size, a, R);
+                    filtered_Robust_prune(graph, P_PRIME->index, new_V, new_V_size, a, R);
                     
                 } else{
                     // else add to neighbors of p' the random point
@@ -749,4 +787,49 @@ void vamana_indexing(Graph *graph, int L, float a, int R) {
     free(V);
     free(lamda);            
     free(shuffled_point_indexes);
+    return graph;
 }
+
+
+// ============= Functions that can be used if we have multiple filters ============= //
+
+// /**
+//  * Computes the intersection of two sets.
+//  *
+//  * @param set1 The first set
+//  * @param set1_size The size of the first set
+//  * @param set2 The second set
+//  * @param set2_size The size of the second set
+//  * @param intersection The computed intersection
+//  * @return The size of the intersection
+//  */
+// int compute_intersection(int *set1, int set1_size, int *set2, int set2_size, int *intersection) {
+//     int k = 0; // Counter for the intersection
+//     for (int i = 0; i < set1_size; i++) {
+//         if (arrayContains(set2, set2_size, set1[i])) {
+//             intersection[k++] = set1[i];
+//         }
+//     }
+//     return k; // Return the size of the intersection
+// }
+
+
+// /**
+//  * Checks if any element of the intersection of two sets is not present in the third set
+//  * @param intersection The intersection of two sets
+//  * @param intersection_size The size of the intersection
+//  * @param set3 The third set
+//  * @param set3_size The size of set3
+//  * @return true if any element of intersection is not in set3, false if all elements of intersection are in set3
+//  */
+// bool is_not_subset(int *intersection, int intersection_size, int *set3, int set3_size) {
+//     for (int i = 0; i < intersection_size; i++) {
+//         if (!arrayContains( set3, set3_size, intersection[i])) {
+//             return true; // Found an element in intersection that is not in set3
+//         }
+//     }
+//     return false; // All elements of intersection are in set3
+// }
+
+// ============= END Functions that can be used if we have multiple filters ============= //
+
