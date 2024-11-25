@@ -184,10 +184,10 @@ int main(int argc, char *argv[]) {
     Neighbor **all_neighbors = find_closest_neighbors(dataset_info, query_info, &actual_neighbors_count);
     print_neighbors(all_neighbors, query_info->num_queries);
     save_neighbors_to_file("neighbors.ivecs", all_neighbors, query_info->num_queries,  K);
-    int** groundtruth_vectors;
-    int groundtruth_num_vectors;
-    int groundtruth_num_dimensions;
-    read_ivecs("neighbors.ivecs", &groundtruth_vectors, &groundtruth_num_vectors, &groundtruth_num_dimensions);
+//    int** groundtruth_vectors;
+//    int groundtruth_num_vectors;
+//    int groundtruth_num_dimensions;
+//    read_ivecs("neighbors.ivecs", &groundtruth_vectors, &groundtruth_num_vectors, &groundtruth_num_dimensions);
     free_dataset(dataset_info);
     free_query_dataset(query_info);
 
