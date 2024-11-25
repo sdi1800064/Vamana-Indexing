@@ -11,6 +11,51 @@ typedef struct {
     float distance;
 } Neighbor;
 
+void read_ivecs(const char* filename, int*** vectors, int* num_vectors, int* dimension) {
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        printf("Error opening file.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Get the size of the file
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    // Read the first 4 bytes to get the dimensionality (d)
+    fread(dimension, sizeof(int), 1, file);
+
+    // Calculate the number of vectors
+    *num_vectors = file_size / ((*dimension + 1) * sizeof(int));
+
+    // Allocate memory for the vectors
+    *vectors = (int**)malloc((*num_vectors) * sizeof(int*));
+    for (int i = 0; i < *num_vectors; i++) {
+        (*vectors)[i] = (int*)malloc((*dimension) * sizeof(int));
+    }
+
+    // Set file pointer back to the beginning
+    fseek(file, 0, SEEK_SET);
+
+    // Read all vectors from the file
+    for (int i = 0; i < *num_vectors; i++) {
+        int dim;
+        fread(&dim, sizeof(int), 1, file);  // Read the dimension (should always match *dimension)
+
+        if (dim != *dimension) {
+            printf("Error: Dimensionality mismatch.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        // Read the vector components
+        fread((*vectors)[i], sizeof(int), *dimension, file);
+        printf("\n");
+    }
+
+    fclose(file);
+}
+
 
 void save_neighbors_to_file(const char *filename, Neighbor **neighbours, int num_vectors, int dimension) {
     FILE *file = fopen(filename, "wb");
@@ -20,18 +65,20 @@ void save_neighbors_to_file(const char *filename, Neighbor **neighbours, int num
     }
 
     for (int i = 0; i < num_vectors; i++) {
-        // Write the dimension
+        // Write the dimension of the vector
         if (fwrite(&dimension, sizeof(int), 1, file) != 1) {
             perror("Error writing dimension");
             fclose(file);
             return;
         }
 
-        // Write the vector elements
-        if (fwrite(&(neighbours[i]->index), sizeof(int), dimension, file) != 1) {
-            perror("Error writing vector elements");
-            fclose(file);
-            return;
+        // Write the indices of the neighbors for this query as the vector
+        for (int j = 0; j < dimension; j++) {
+            if (fwrite(&(neighbours[i][j].index), sizeof(int), 1, file) != 1) {
+                perror("Error writing neighbor index");
+                fclose(file);
+                return;
+            }
         }
     }
 
@@ -61,10 +108,10 @@ Neighbor **find_closest_neighbors(DatasetInfo *dataset_info, QueryInfo *query_in
         }
 
         for (int i = 0; i < dataset_info->num_vectors; i++) {
-            if (query.query_type == 1) {
+            if (query.v != -1) {
                 if (dataset_info->datapoints[i].category == query.v) {
-                    float distance = squared_euclidean_distance(query.query_vector, dataset_info->datapoints[i].vectors,
-                                                                100);
+                    float distance = squared_euclidean_distance(query.query_vector, dataset_info->datapoints[i].vectors,100);
+
                     if (distance < all_neighbors[q][K - 1].distance) {
                         all_neighbors[q][K - 1].index = i;
                         all_neighbors[q][K - 1].distance = distance;
@@ -127,6 +174,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
+
+
     DatasetInfo *dataset_info = read_dataset(base_file_name, filters);
     QueryInfo *query_info = read_query_dataset(query_file_name);
     print_query_dataset(query_info);
@@ -135,8 +184,13 @@ int main(int argc, char *argv[]) {
     Neighbor **all_neighbors = find_closest_neighbors(dataset_info, query_info, &actual_neighbors_count);
     print_neighbors(all_neighbors, query_info->num_queries);
     save_neighbors_to_file("neighbors.ivecs", all_neighbors, query_info->num_queries,  K);
+    int** groundtruth_vectors;
+    int groundtruth_num_vectors;
+    int groundtruth_num_dimensions;
+    read_ivecs("neighbors.ivecs", &groundtruth_vectors, &groundtruth_num_vectors, &groundtruth_num_dimensions);
     free_dataset(dataset_info);
     free_query_dataset(query_info);
 
     return 0;
 }
+
