@@ -46,6 +46,9 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 test: test.c $(SRC_DIR)/dataset.c
 	$(CC) -o test $(SRC_DIR)/test.c $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(CFLAGS) $(LDFLAGS)
 
+groundtruth: $(SRC_DIR)/groundtruth.c $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c
+	$(CC) -o groundtruth $(SRC_DIR)/groundtruth.c $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(CFLAGS) $(LDFLAGS)
+
 # Clean rule to remove object files and executables
 clean:
 	rm -rf $(OBJ_DIR)/*.o $(EXEC) test output.txt
