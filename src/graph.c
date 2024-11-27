@@ -160,7 +160,13 @@ void addEdge(Point *point, int toIndex) {
  */
 
 void add_to_dynamic_array(int **array, int *size, int element) {
+    // printf("Adding %d to array of size %d\n", element, *size);
+    if(element == 0){
+        printf("Adding 0 to array of size %d\n", *size);
+    }
+
     if(arrayContains(*array, *size, element)) {
+        // printf("Element %d already in array\n", element);
         return;
     }
     int old_size = *size;
@@ -171,8 +177,10 @@ void add_to_dynamic_array(int **array, int *size, int element) {
     if(!(*array)) {
         printf("Memory re-Allocation failed!\n");
         *array = temp;
+        printf("Reverted to old array\n");
     }
     (*array)[old_size] = element;
+    // printf("Array now has size %d\n", *size);
 
 }
 
@@ -359,21 +367,17 @@ void sort_array(Graph *graph, int *array, int array_size, float *Xq) {
 }
 
 
-// Function to sort an array using Bubble Sort
-void sort_filter_array(int *array[2], int size) {
-    if (size <= 1) return; // No need to sort arrays of size 0 or 1
+// Function to sort filterInfo's array of filterPoints based on their filter_index using Bubble Sort
+void sort_filter_array(filterInfo *filter) {
+    if (filter->num_filters <= 1) return; // No need to sort arrays of size 0 or 1
 
-    for (int i = 0; i < size - 1; i++) {
-        for (int j = 0; j < size - i - 1; j++) {
-            if (array[0][j] > array[0][j + 1]) {
+    for (int i = 0; i < filter->num_filters - 1; i++) {
+        for (int j = 0; j < filter->num_filters - i - 1; j++) {
+            if (filter->filtersPoints[j].filter_index > filter->filtersPoints[j + 1].filter_index) {
                 // Swap elements
-                int temp0 = array[0][j];
-                array[0][j] = array[0][j + 1];
-                array[0][j + 1] = temp0;
-
-                int temp1 = array[1][j];
-                array[1][j] = array[1][j + 1];
-                array[1][j + 1] = temp1;
+                filterPoint temp = filter->filtersPoints[j];
+                filter->filtersPoints[j] = filter->filtersPoints[j + 1];
+                filter->filtersPoints[j + 1] = temp;
             }
         }
     }
@@ -790,6 +794,18 @@ Graph* filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R) {
     free(lamda);            
     free(shuffled_point_indexes);
     return graph;
+}
+
+Graph* stitched_vamana_indexing(DatasetInfo* dataset, int L, float a, int R_small, int R_stitched) {
+    Graph* graph = initialise_graph(dataset, R_small);
+
+    // Find all the filters
+
+    // Find all the points fo each filter
+
+    // For each filter, run the VAMANA algorithm
+
+    // For each Visited run filteredRobustPrune
 }
 
 

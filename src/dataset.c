@@ -4,33 +4,62 @@
 #include "../headers/graph.h"
 
 // Function to dynamically add a filter or update its count
-void add_or_increment_filter(filterInfo *filters, int category) {
+void add_or_increment_filter(filterInfo *filtersInfo, int point_category, int point_index) {
+
+    // The filters array is empty
+    if( filtersInfo->num_filters == 0) {
+        filtersInfo->filtersPoints[0].filter_index = point_category;
+        filtersInfo->filtersPoints[0].count = 1;
+        filtersInfo->filtersPoints[0].point_indexes = (int *)malloc(sizeof(int));
+        filtersInfo->filtersPoints[0].point_indexes[0] = point_index;
+        filtersInfo->num_filters++;
+        return;
+    }
+
     // Check if the filter already exists
-    for (int i = 0; i < filters->filters_size; i++) {
-        if (filters->filters[0][i] == category) {
-            // Increment the count for this filter
-            filters->filters[1][i]++;
+    for ( int i = 0; i < filtersInfo->num_filters; i++) {
+        // If the filter already exists, Add it to the point indexes
+        if ( filtersInfo->filtersPoints[i].filter_index == point_category) {
+            filtersInfo->filtersPoints[i].count++;
+            filtersInfo->filtersPoints[i].point_indexes = (int *)realloc(filtersInfo->filtersPoints[i].point_indexes, (filtersInfo->filtersPoints[i].count) * sizeof(int));
+            filtersInfo->filtersPoints[i].point_indexes[filtersInfo->filtersPoints[i].count - 1] = point_index;
             return;
         }
     }
 
-    // If not found, add a new filter
-    filters->filters_size++;
-    filters->filters[0] = (int *)realloc(filters->filters[0], filters->filters_size * sizeof(int));
-    filters->filters[1] = (int *)realloc(filters->filters[1], filters->filters_size * sizeof(int));
+    // If the filter doesn't exist, create it
+    filtersInfo->filtersPoints = (filterPoint *)realloc(filtersInfo->filtersPoints, (filtersInfo->num_filters + 1) * sizeof(filterPoint));
+    filtersInfo->filtersPoints[filtersInfo->num_filters].filter_index = point_category;
+    filtersInfo->filtersPoints[filtersInfo->num_filters].count = 1;
+    filtersInfo->filtersPoints[filtersInfo->num_filters].point_indexes = (int *)malloc(sizeof(int));
+    filtersInfo->filtersPoints[filtersInfo->num_filters].point_indexes[0] = point_index;
+    filtersInfo->num_filters++;
 
-    if (!filters->filters[0] || !filters->filters[1]) {
+}
+
+
+filterInfo initialise_filters() {
+
+    filterInfo filtersInfo;
+    filtersInfo.num_filters = 0;
+
+    filtersInfo.filtersPoints = (filterPoint *)malloc(sizeof(filterPoint));
+    if (!filtersInfo.filtersPoints) {
         perror("Memory allocation error for filters");
         exit(EXIT_FAILURE);
     }
 
-    // Add the new filter and initialize its count to 1
-    filters->filters[0][filters->filters_size - 1] = category;
-    filters->filters[1][filters->filters_size - 1] = 1;
+    filtersInfo.filtersPoints[0].filter_index = -1;
+    filtersInfo.filtersPoints[0].count = 0;
+    filtersInfo.filtersPoints[0].point_indexes = (int *)malloc(sizeof(int));
+
+    return filtersInfo;
 }
 
 // Function to read the dataset
-DatasetInfo* read_dataset(const char *filename, filterInfo *filters) {
+DatasetInfo* read_dataset(const char *filename) {
+    printf("Reading dataset from %s.\n", filename);
+    
     FILE *file = fopen(filename, "rb");
     if (!file) {
         perror("Error opening file");
@@ -53,6 +82,7 @@ DatasetInfo* read_dataset(const char *filename, filterInfo *filters) {
         return NULL;
     }
     dataset->num_vectors = (int)num_vectors;
+    dataset->filterInfo = initialise_filters();
 
     // Allocate memory for the DataPoint array
     dataset->datapoints = (DataPoint *)malloc(num_vectors * sizeof(DataPoint));
@@ -67,6 +97,7 @@ DatasetInfo* read_dataset(const char *filename, filterInfo *filters) {
     const int vector_size = (2 + 100) * sizeof(float); // 2 attributes + 100 dimensions
 
     // Read each vector from the file
+    int count = 0;
     for (int i = 0; i < dataset->num_vectors; i++) {
         float buffer[102];
 
@@ -87,10 +118,14 @@ DatasetInfo* read_dataset(const char *filename, filterInfo *filters) {
         }
 
         // Update the filters with the category
-        add_or_increment_filter(filters, dataset->datapoints[i].category);
+        // printf("Updating index %d to filter index %d.\n", i, dataset->datapoints[i].category);
+        count++;
+        add_or_increment_filter(&dataset->filterInfo, dataset->datapoints[i].category, i);
+        
     }
-
+    printf("counted inside the dataset %d\n", count);
     fclose(file);
+    printf("Finished reading dataset.\n");
     return dataset;
 }
 

@@ -44,7 +44,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 
 # Rule to compile and link the test executable
 test: test.c $(SRC_DIR)/dataset.c
-	$(CC) -o test $(SRC_DIR)/test.c $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(CFLAGS) $(LDFLAGS)
+	$(CC) -o test test.c $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(CFLAGS) $(LDFLAGS)
 
 groundtruth: $(SRC_DIR)/groundtruth.c $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c
 	$(CC) -o groundtruth $(SRC_DIR)/groundtruth.c $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(CFLAGS) $(LDFLAGS)

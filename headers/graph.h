@@ -26,7 +26,7 @@ int *get_the_difference(int *Lamda, int Lamda_size, int *V, int V_size, int *Lam
 void swap(int *a, int *b);
 void swap_float(float *a, float *b);
 void sort_array(Graph *graph, int *l_temp, int l_temp_size, float *Xq);
-void sort_filter_array(int *array[2], int size);
+void sort_filter_array(filterInfo *filter);
 void printArray(int *array, int array_size);
 int arrayContains(int *V, int V_size, int node);
 void add_to_dynamic_array(int **array, int *size, int element);
@@ -36,7 +36,6 @@ void printArray(int *array, int array_size);
 // int compute_intersection(int *set1, int set1_size, int *set2, int set2_size, int *intersection);
 // bool is_not_subset(int *intersection, int intersection_size, int *set3, int set3_size);
 
-void sort_filter_array(int *array[2], int size);
 void filtered_greedy_search(Graph *graph, float *Xq, int* start_index, int start_index_size, int **V, int *V_size, int **Lamda, int *Lamda_size, int L, int query_filter);
 
 int calculate_medoid(Graph *graph, int *sample_point_indexes, int num_sample_points);

@@ -7,9 +7,9 @@
 #include "graph.h"
 #include "structs.h"
 
-void add_or_increment_filter(filterInfo *filters, int category);
+void add_or_increment_filter(filterInfo *filters, int point_category, int point_index);
 
-DatasetInfo* read_dataset(const char *filename, filterInfo *filters);
+DatasetInfo* read_dataset(const char *filename);
 void free_dataset(DatasetInfo *dataset);
 void print_dataset(DatasetInfo *dataset);
 void cprint_dataset(DatasetInfo *dataset, int target_category);
