@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../headers/dataset.h"
-#include "../headers/graph.h"
+#include "headers/dataset.h"
+#include "headers/graph.h"
 
 
 int main() {
@@ -18,16 +18,16 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    // for( int i = 0; i < dataset->filterInfo.num_filters; i++){
+    sort_filter_array(&dataset->filterInfo);
+
+    // printf("Number of filters: %u\n", dataset->filterInfo.num_filters);
+    // for (int i = 0; i < dataset->filterInfo.num_filters; i++) {
     //     printf("Filter %d: number of vectors: %d\n", dataset->filterInfo.filtersPoints[i].filter_index, dataset->filterInfo.filtersPoints[i].count );
     //     for (int j = 0; j < dataset->filterInfo.filtersPoints[i].count; j++) {
     //         printf("%d ", dataset->filterInfo.filtersPoints[i].point_indexes[j]);
     //     }
     //     printf("\n");
     // }
-
-    sort_filter_array(&dataset->filterInfo);
-    
 
     // cprint_dataset(dataset, 4);
     // cprint_query_dataset(queryDataSet, 4);

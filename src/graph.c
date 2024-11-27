@@ -806,6 +806,7 @@ Graph* stitched_vamana_indexing(DatasetInfo* dataset, int L, float a, int R_smal
     // For each filter, run the VAMANA algorithm
 
     // For each Visited run filteredRobustPrune
+    return graph;
 }
 
 
