@@ -4,6 +4,7 @@
 #include <float.h>
 #include <stdbool.h>
 #include <string.h>
+#include <time.h>
 
 #include "../headers/graph.h"
 #include "../headers/dataset.h"
@@ -788,6 +789,90 @@ Graph* filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R) {
     free(lamda);            
     free(shuffled_point_indexes);
     return graph;
+}
+
+FilteredMethoids * get_filtered_medoids(DatasetInfo *datasetInfo, int *t,filterInfo *filterInfo)
+{
+    DataPoint **groupedData = malloc(filterInfo->filters_size * sizeof(DataPoint *));
+    for (int i = 0; i < filterInfo->filters_size; i++) {
+        groupedData[i] = malloc(filterInfo->filters[1][i] * sizeof(DataPoint));
+    }
+
+    for (int i = 0; i < datasetInfo->num_vectors; i++) {
+        int category = datasetInfo->datapoints[i].category;
+        groupedData[category][filterInfo->filters[0][i]++] = datasetInfo->datapoints[i];
+    }
+    FilteredMethoids * filteredMedoids = malloc(sizeof(FilteredMethoids));
+    filteredMedoids->metoids = findClosestDataPoints(groupedData,filterInfo->filters[1],filterInfo->filters_size,*t);
+    filteredMedoids->size=filterInfo->filters_size;
+
+
+    for (int i = 0; i < filterInfo->filters_size; i++) {
+        free(groupedData[i]);
+    }
+    free(groupedData);
+
+    return filteredMedoids;
+}
+void generate_random_permutation(int *perm, int n) {
+    for (int i = 0; i < n; i++) {
+        perm[i] = i;
+    }
+    for (int i = n - 1; i > 0; i--) {
+        int j = rand() % (i + 1);
+        int temp = perm[i];
+        perm[i] = perm[j];
+        perm[j] = temp;
+    }
+}
+
+
+DataPoint *findClosestDataPoints(DataPoint **groupedData, int *groupSizes, int numCategories, int t) {
+    DataPoint *closestPoints = malloc(numCategories * sizeof(DataPoint));
+    srand(time(NULL)); // Seed for random permutation
+
+    for (int cat = 0; cat < numCategories; cat++) {
+        int groupSize = groupSizes[cat];
+        if (groupSize == 0) continue;
+
+        // If the category has only one element, directly assign it as the medoid
+        if (groupSize == 1) {
+            closestPoints[cat] = groupedData[cat][0];
+            continue;
+        }
+
+        // Adjust the permutation size to be the minimum of `groupSize` and `t`
+        int permSize = groupSize < t ? groupSize : t;
+
+        int *randomPermutation = malloc(permSize * sizeof(int));
+        generate_random_permutation(randomPermutation, groupSize);
+
+        double minDistance = DBL_MAX;
+        int closestIndex = -1;
+
+        for (int i = 0; i < permSize; i++) {
+            int permIndex = randomPermutation[i];
+            float *permVector = groupedData[cat][permIndex].vectors;
+
+            double totalDistance = 0.0;
+            for (int j = 0; j < groupSize; j++) {
+                if (j == permIndex) continue;
+                float *currentVector = groupedData[cat][j].vectors;
+                totalDistance += squared_euclidean_distance(permVector, currentVector, 100);
+            }
+
+            if (totalDistance < minDistance) {
+                minDistance = totalDistance;
+                closestIndex = permIndex;
+            }
+        }
+
+        // Store the closest DataPoint for this category
+        closestPoints[cat] = groupedData[cat][closestIndex];
+        free(randomPermutation);
+    }
+
+    return closestPoints;
 }
 
 

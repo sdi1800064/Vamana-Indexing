@@ -40,9 +40,13 @@ void sort_filter_array(int *array[2], int size);
 void filtered_greedy_search(Graph *graph, float *Xq, int* start_index, int start_index_size, int **V, int *V_size, int **Lamda, int *Lamda_size, int L, int query_filter);
 
 int calculate_medoid(Graph *graph, int *sample_point_indexes, int num_sample_points);
+FilteredMethoidArray * get_filtered_medoids(DatasetInfo *datasetInfo, int *t,filterInfo *filterInfo);
+
 int* sample_points(int max, int num_sample_points);
 
 void check_for_duplicates(int *array, int size);
+void generate_random_permutation(int *perm, int n);
+DataPoint *findClosestDataPoints(DataPoint **groupedData, int *groupSizes, int numCategories,int t);
 Graph* filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R);
 
 #endif

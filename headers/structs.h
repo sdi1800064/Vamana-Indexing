@@ -55,4 +55,8 @@ typedef struct {
 
 // ==================== Structures ==================== //
 
+typedef  struct {
+    DataPoint *metoids;
+    int size;
+} FilteredMethoids;
 #endif
