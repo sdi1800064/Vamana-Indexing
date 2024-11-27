@@ -497,6 +497,7 @@ void filtered_greedy_search(Graph *graph, float *Xq, int* start_index, int start
         p_star->edge_count = 0;       
 
         // Keep the neighbors of p* that have at least one common filter with Xq and are not visited
+        // Nout'(p*) <- ( p' ε Nout(p*) : Fs ^ Fx != 0, p' !ε V )
         for (int i = 0; i < temp_neighbors_size; i++) {
             Point *neighbor = &graph->points[temp_neighbors[i]];
             if (neighbor->category == query_filter || query_filter == -1) {
@@ -507,6 +508,7 @@ void filtered_greedy_search(Graph *graph, float *Xq, int* start_index, int start
         free(temp_neighbors);
 
         // Add the neighbors of p* to Lamda
+        // Lamda <- Lamda U Nout(p*)
         for (int i = 0; i < p_star->edge_count; i++) {
             int neighbor_index = p_star->edges[i];
             add_to_dynamic_array(Lamda, Lamda_size, neighbor_index);
