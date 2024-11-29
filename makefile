@@ -8,11 +8,17 @@ SRC_DIR = src
 OBJ_DIR = obj
 HEADER_DIR = headers
 
-# Source files
-SRC_FILES = $(wildcard $(SRC_DIR)/*.c)
+# List all .c source files in the source directory
+SRC_FILES := $(wildcard $(SRC_DIR)/*.c)
 
-# Object files
-OBJ_FILES = $(SRC_FILES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
+# List of files to exclude
+EXCLUDE_FILES := $(SRC_DIR)/groundtruth.c
+
+# Filter out the excluded files
+INCLUDE_FILES := $(filter-out $(EXCLUDE_FILES), $(SRC_FILES))
+
+# Generate object files list from the filtered source files
+OBJ_FILES := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(INCLUDE_FILES))
 
 # Executable name
 EXEC = my_program

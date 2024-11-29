@@ -17,8 +17,8 @@ int main(int argc, char *argv[]) {
     printf("Starting...\n");
     // Initialize variables
     char *base_file_name = NULL;
-    char *query_file_name = NULL;
-    char *groundtruth_file_name = NULL;
+    // char *query_file_name = NULL;
+    // char *groundtruth_file_name = NULL;
     int k = -1;
     int R = -1;
     float a = -1.0;
@@ -29,12 +29,12 @@ int main(int argc, char *argv[]) {
         if (strcmp(argv[i], "-b") == 0 && i + 1 < argc) {
             base_file_name = argv[i + 1];
             i++;  // Move past the flag and value
-        } else if (strcmp(argv[i], "-q") == 0 && i + 1 < argc) {
-            query_file_name = argv[i + 1];
-            i++;
-        } else if (strcmp(argv[i], "-g") == 0 && i + 1 < argc) {
-            groundtruth_file_name = argv[i + 1];
-            i++;
+        // } else if (strcmp(argv[i], "-q") == 0 && i + 1 < argc) {
+        //     query_file_name = argv[i + 1];
+        //     i++;
+        // } else if (strcmp(argv[i], "-g") == 0 && i + 1 < argc) {
+        //     groundtruth_file_name = argv[i + 1];
+        //     i++;
         } else if (strcmp(argv[i], "-k") == 0 && i + 1 < argc) {
             k = atoi(argv[i + 1]);
             i++;
@@ -51,9 +51,15 @@ int main(int argc, char *argv[]) {
     }
 
     // Check if all required arguments are provided
-    if (!base_file_name || !query_file_name || !groundtruth_file_name || k == -1 || R == -1 || a == -1.0) {
+    // if (!base_file_name || !query_file_name || !groundtruth_file_name || k == -1 || R == -1 || a == -1.0) {
+    //     fprintf(stderr, "Error: Missing required arguments.\n");
+    //     fprintf(stderr, "Usage: %s -b base_file_name -q query_file_name -g groundtruth_file_name -k (int k) -R (int R) -a (float a) -L (int L)\n", argv[0]);
+    //     return 1;
+    // }
+
+    if (!base_file_name || k == -1 || R == -1 || a == -1.0) {
         fprintf(stderr, "Error: Missing required arguments.\n");
-        fprintf(stderr, "Usage: %s -b base_file_name -q query_file_name -g groundtruth_file_name -k (int k) -R (int R) -a (float a) -L (int L)\n", argv[0]);
+        fprintf(stderr, "Usage: %s -b base_file_name -k (int k) -R (int R) -a (float a) -L (int L)\n", argv[0]);
         return 1;
     }
 
@@ -64,46 +70,56 @@ int main(int argc, char *argv[]) {
 
     printf("k = %d | L = %d | a = %f | R = %d\n", k, L, a, R);
 
-
     // ===================== CREATE OUTPUT FILE IF NEEDED ================== //
     // Create an output file
     
-    // FILE *file_check = fopen("output.txt", "r");
-    // if (file_check != NULL) {
-    //     // File exists, so close it and delete it
-    //     printf("Existing output.txt file found. Deleting...\n");
-    //     fclose(file_check);
-    //     if (remove("output.txt") == 0) {
-    //         printf("File deleted successfully.\n");
-    //     } else {
-    //         printf("Error: Could not delete existing output.txt file!\n");
-    //         return 1;
-    //     }
-    // }
+    FILE *file_check = fopen("output.txt", "r");
+    if (file_check != NULL) {
+        // File exists, so close it and delete it
+        printf("Existing output.txt file found. Deleting...\n");
+        fclose(file_check);
+        if (remove("output.txt") == 0) {
+            printf("File deleted successfully.\n");
+        } else {
+            printf("Error: Could not delete existing output.txt file!\n");
+            return 1;
+        }
+    }
 
-    // // Create a new file (overwrite or create anew)
-    // FILE *outputfd = fopen("output.txt", "w");
-    // if (outputfd == NULL) {
-    //     printf("Error: Could not create output.txt file!\n");
-    //     return 1;
-    // }
-    
-    // Initialise the base Dataset
-    filterInfo filters;
-    filters.filters[0] = (int*)malloc(sizeof(int)); // filter index
-    filters.filters[1] = (int*)malloc(sizeof(int)); // count of points with that filter
-    filters.filters_size = 0;
+    // Create a new file (overwrite or create anew)
+    FILE *outputfd = fopen("output.txt", "w");
+    if (outputfd == NULL) {
+        printf("Error: Could not create output.txt file!\n");
+        return 1;
+    }
+
+    // ======================================= //
+
+
     DatasetInfo* dataSet;
-    dataSet = read_dataset(base_file_name, &filters);
+    dataSet = read_dataset(base_file_name);
 
     // Initialise the base Dataset
-    QueryInfo* querySet;
-    querySet = read_query_dataset(query_file_name);
+    // QueryInfo* querySet;
+    // querySet = read_query_dataset(query_file_name);
 
 
     // ============== VAMANA INDEXING ================= //
-
-    Graph *graph = filtered_vamana_indexing(dataSet, L, a, R);
+    int R_small = R/2;
+    int graph_size = dataSet->filterInfo.num_filters;
+    Graph* graph = (Graph*)malloc(graph_size * sizeof(Graph));
+    if (graph == NULL) {
+        printf("Error: Could not allocate memory for graph!\n");
+        return 1;
+    }
+    // print_dataset(dataSet);
+    graph = stitched_vamana_indexing(dataSet, L, a, R_small, R);
+    printf("Printing Graphs..\n");
+    for(int i = 0; i < graph_size; i++) {
+        fprintf(outputfd, "Graph %d:\n", i);
+        fprint_graph(&graph[i], outputfd);
+        fprintf(outputfd, "====================================\n\n");        
+    }
 
     // ============ RECALL AFTER VAMANA INDEXING ============= //
 
@@ -147,7 +163,11 @@ int main(int argc, char *argv[]) {
     // printf("Found %d / %d\n", total_count, prediction_count);
     // printf("Recall: %.3f%%\n", recall*100);
 
-    free_graph(graph);
+    for(int i = 0; i < dataSet->filterInfo.num_filters; i++) {
+        free_graph(graph[i]);
+    }   
+    free(graph);
+
     printf("Exiting the program..\n");
 
     // Close the file

@@ -111,6 +111,7 @@ DatasetInfo* read_dataset(const char *filename) {
         }
 
         // Populate the DataPoint structure
+        dataset->datapoints[i].point_index = i;
         dataset->datapoints[i].category = (int)buffer[0];
         dataset->datapoints[i].timestamp = buffer[1];
         for (int j = 0; j < 100; j++) {
@@ -120,7 +121,7 @@ DatasetInfo* read_dataset(const char *filename) {
         // Update the filters with the category
         // printf("Updating index %d to filter index %d.\n", i, dataset->datapoints[i].category);
         count++;
-        add_or_increment_filter(&dataset->filterInfo, dataset->datapoints[i].category, i);
+        add_or_increment_filter(&dataset->filterInfo, dataset->datapoints[i].category, dataset->datapoints[i].point_index);
         
     }
     printf("counted inside the dataset %d\n", count);
@@ -137,11 +138,11 @@ void free_dataset(DatasetInfo *dataset) {
 
 void print_dataset(DatasetInfo *dataset) {
     for (int i = 0; i < dataset->num_vectors; i++) {
-        printf("Vector %d: Category = %d, Timestamp = %f, Vectors = ", i, dataset->datapoints[i].category, dataset->datapoints[i].timestamp);
+        printf("index %d: Category = %d, Timestamp = %f, Vectors :\n ", dataset->datapoints[i].point_index, dataset->datapoints[i].category, dataset->datapoints[i].timestamp);
         for (int j = 0; j < 100; j++) {
             printf("%f ", dataset->datapoints[i].vectors[j]);
         }
-        printf("\n");
+        printf("\n\n");
     }
 }
 

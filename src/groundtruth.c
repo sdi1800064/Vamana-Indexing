@@ -153,7 +153,6 @@ int main(int argc, char *argv[]) {
 
     uint32_t base_num_vectors;
     int query_num_vectors;
-    filterInfo *filters = (filterInfo *) malloc(sizeof(filterInfo));
 
 
     // Initialize variables
@@ -176,7 +175,7 @@ int main(int argc, char *argv[]) {
 
 
 
-    DatasetInfo *dataset_info = read_dataset(base_file_name, filters);
+    DatasetInfo *dataset_info = read_dataset(base_file_name);
     QueryInfo *query_info = read_query_dataset(query_file_name);
     print_query_dataset(query_info);
     print_dataset(dataset_info);

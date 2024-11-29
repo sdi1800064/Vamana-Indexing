@@ -17,6 +17,7 @@ typedef struct{
 } filterInfo;
 
 typedef struct {
+    int point_index;
     int category;  // Array for discretized categorical attribute C
     float timestamp;  // Array for normalized timestamp attribute T
     float vectors[100];     // Array for the remaining 100-dimensional vectors
