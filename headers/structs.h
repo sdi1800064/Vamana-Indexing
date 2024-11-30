@@ -56,7 +56,12 @@ typedef struct {
 // ==================== Structures ==================== //
 
 typedef  struct {
-    DataPoint *metoids;
+    FilteredMedoid*metoids;
     int size;
-} FilteredMethoids;
+} FilteredMethoidList;
+
+typedef struct {
+    int index;
+	int category;
+} FilteredMedoid;
 #endif
