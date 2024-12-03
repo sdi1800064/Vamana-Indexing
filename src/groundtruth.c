@@ -63,9 +63,9 @@ void save_neighbors_to_file(const char *filename, Neighbor **neighbours, int num
         perror("Error opening file");
         return;
     }
-
     for (int i = 0; i < num_vectors; i++) {
         // Write the dimension of the vector
+        // printf("%d: ", i);
         if (fwrite(&dimension, sizeof(int), 1, file) != 1) {
             perror("Error writing dimension");
             fclose(file);
@@ -108,7 +108,7 @@ Neighbor **find_closest_neighbors(DatasetInfo *dataset_info, QueryInfo *query_in
         }
 
         for (int i = 0; i < dataset_info->num_vectors; i++) {
-            if (query.v != -1) {
+            if (query.query_type == 1) {
                 if (dataset_info->datapoints[i].category == query.v) {
                     float distance = squared_euclidean_distance(query.query_vector, dataset_info->datapoints[i].vectors,100);
 
@@ -121,7 +121,7 @@ Neighbor **find_closest_neighbors(DatasetInfo *dataset_info, QueryInfo *query_in
                         }
                     }
                 }
-            } else {
+            } else if(query.query_type == 0) {
                 float distance = squared_euclidean_distance(query.query_vector, dataset_info->datapoints[i].vectors,
                                                             100);
                 if (distance < all_neighbors[q][K - 1].distance) {
@@ -144,8 +144,12 @@ void print_neighbors(Neighbor **all_neighbors, int num_queries) {
     for (int q = 0; q < num_queries; q++) {
         printf("Query %d:\n", q);
         for (int i = 0; i < K; i++) {
-            printf("Index: %d, Distance: %f\n", all_neighbors[q][i].index, all_neighbors[q][i].distance);
+            if(all_neighbors[q][i].index == -1){
+                break;
+            }
+            printf("%d ", all_neighbors[q][i].index);
         }
+        printf("\n");
     }
 }
 
@@ -153,13 +157,11 @@ int main(int argc, char *argv[]) {
 
     uint32_t base_num_vectors;
     int query_num_vectors;
-    filterInfo *filters = (filterInfo *) malloc(sizeof(filterInfo));
 
 
     // Initialize variables
     char *base_file_name = NULL;
     char *query_file_name = NULL;
-    char *groundtruth_file_name = NULL;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-b") == 0 && i + 1 < argc) {
@@ -168,22 +170,20 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "-q") == 0 && i + 1 < argc) {
             query_file_name = argv[i + 1];
             i++;
-        } else if (strcmp(argv[i], "-g") == 0 && i + 1 < argc) {
-            groundtruth_file_name = argv[i + 1];
-            i++;
         }
     }
 
 
 
-    DatasetInfo *dataset_info = read_dataset(base_file_name, filters);
+    DatasetInfo *dataset_info = read_dataset(base_file_name);
     QueryInfo *query_info = read_query_dataset(query_file_name);
-    print_query_dataset(query_info);
-    print_dataset(dataset_info);
+    // print_query_dataset(query_info);
+    // print_dataset(dataset_info);
     int actual_neighbors_count;
     Neighbor **all_neighbors = find_closest_neighbors(dataset_info, query_info, &actual_neighbors_count);
     print_neighbors(all_neighbors, query_info->num_queries);
-    save_neighbors_to_file("neighbors.ivecs", all_neighbors, query_info->num_queries,  K);
+    save_neighbors_to_file("neighbors.txt", all_neighbors, query_info->num_queries,  K);
+    
 //    int** groundtruth_vectors;
 //    int groundtruth_num_vectors;
 //    int groundtruth_num_dimensions;
