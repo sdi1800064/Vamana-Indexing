@@ -54,14 +54,16 @@ typedef struct {
 } Graph;
 
 // ==================== Structures ==================== //
+typedef struct {
+    int index;
+    int category;
+} FilteredMedoid;
 
 typedef  struct {
     FilteredMedoid*metoids;
     int size;
 } FilteredMethoidList;
 
-typedef struct {
-    int index;
-	int category;
-} FilteredMedoid;
+
+
 #endif
