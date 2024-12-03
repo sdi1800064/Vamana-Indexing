@@ -764,12 +764,12 @@ Graph* filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filt
 
                 // if | neighbor(p') U random point | > R then
                 Point *P_PRIME = &graph->points[graph->points[s_index].edges[j]];
-                
+                addEdge(P_PRIME, s_index);
                 if(P_PRIME->edge_count + 1 > R) {
                     // run robustPrune(p', Neighbors of p' U random point, a, R)
                     // create a new visited list that contains only the neighbors of p' and the random point
                     new_V = NULL;
-                    new_V = (int *)malloc((P_PRIME->edge_count + 1) * sizeof(int));
+                    new_V = (int *) malloc((P_PRIME->edge_count + 1) * sizeof(int));
                     new_V_size = 0;
                     for (int k = 0; k < P_PRIME->edge_count; k++) {
                         if (!arrayContains(new_V, new_V_size, P_PRIME->edges[k])) {
@@ -780,10 +780,6 @@ Graph* filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filt
 
                     // run robustPrune(p', new_V, a, R)
                     filtered_Robust_prune(graph, P_PRIME->index, new_V, new_V_size, a, R);
-                    
-                } else{
-                    // else add to neighbors of p' the random point
-                    addEdge(P_PRIME, s_index);
                 }
             }
             // Traversed to another point of the graph
@@ -896,7 +892,8 @@ FilteredMedoid* findClosestDataPoints(Point **groupedData, int *groupSizes, int 
     return closestPoints;
 }
 
-int find_medoid_for_point(FilteredMethoidList* filteredMedoids, Point* datapoint, int medoid_index) {
+int find_medoid_for_point(FilteredMethoidList* filteredMedoids, Point* datapoint, int medoid_index)
+{
     if (datapoint->category == -1) {
         return medoid_index;
     }
