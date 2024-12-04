@@ -51,7 +51,7 @@ groundtruth: $(SRC_DIR)/groundtruth.c $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c
 
 # Clean rule to remove object files and executables
 clean:
-	rm -rf $(OBJ_DIR)/*.o $(EXEC) test output.txt
+	rm -rf $(OBJ_DIR)/*.o $(EXEC) test output.txt groundtruth
 
 # Phony targets
 .PHONY: all debug clean test

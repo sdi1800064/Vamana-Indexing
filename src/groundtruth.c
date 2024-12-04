@@ -64,13 +64,6 @@ void save_neighbors_to_file(const char *filename, Neighbor **neighbours, int num
         return;
     }
     for (int i = 0; i < num_vectors; i++) {
-        // Write the dimension of the vector
-        // printf("%d: ", i);
-        if (fwrite(&dimension, sizeof(int), 1, file) != 1) {
-            perror("Error writing dimension");
-            fclose(file);
-            return;
-        }
 
         // Write the indices of the neighbors for this query as the vector
         for (int j = 0; j < dimension; j++) {
@@ -153,6 +146,7 @@ void print_neighbors(Neighbor **all_neighbors, int num_queries) {
     }
 }
 
+
 int main(int argc, char *argv[]) {
 
     uint32_t base_num_vectors;
@@ -181,9 +175,26 @@ int main(int argc, char *argv[]) {
     // print_dataset(dataset_info);
     int actual_neighbors_count;
     Neighbor **all_neighbors = find_closest_neighbors(dataset_info, query_info, &actual_neighbors_count);
-    print_neighbors(all_neighbors, query_info->num_queries);
-    save_neighbors_to_file("neighbors.txt", all_neighbors, query_info->num_queries,  K);
     
+    char* GROUNDTRUTH_FILE_NAME = "neighbors.ivecs";
+    save_neighbors_to_file(GROUNDTRUTH_FILE_NAME, all_neighbors, query_info->num_queries,  K);
+
+    int** ground_truth = readGroundTruth(GROUNDTRUTH_FILE_NAME, query_info->num_queries);
+
+    for(int i = 0; i < query_info->num_queries; i++) {
+        if(ground_truth[i][0] != -1){
+            printf("Query %d of type %d has closest neighbors: ", i, query_info->queries[i].query_type);
+            for(int j = 0; j < 100; j++) {
+                if(ground_truth[i][j] == -1){
+                    break;
+                }
+                printf("%d ", ground_truth[i][j]);
+            }
+            printf("\n\n");
+        }
+    }
+
+
 //    int** groundtruth_vectors;
 //    int groundtruth_num_vectors;
 //    int groundtruth_num_dimensions;
