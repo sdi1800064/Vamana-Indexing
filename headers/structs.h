@@ -32,7 +32,7 @@ typedef struct {
 
 
 typedef struct {
-    int query_type; // 0: categorical, 1: timestamp, 2: categorical and timestamp, 3: categorical and timestamp
+    int query_type; // 0: no attribute, 1: categorical, 2: timestamp, 3: categorical and timestamp
     int v; // Value for categorical attribute (or -1)
     float l; // Lower bound for timestamp attribute (or -1)
     float r; // Upper bound for timestamp attribute (or -1)

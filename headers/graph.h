@@ -25,12 +25,13 @@ int *get_the_difference(int *Lamda, int Lamda_size, int *V, int V_size, int *Lam
 void swap(int *a, int *b);
 void swap_float(float *a, float *b);
 void sort_array(Graph *graph, int *l_temp, int l_temp_size, float *Xq);
-void sort_filter_array(filterInfo *filter);
 void printArray(int *array, int array_size);
 int arrayContains(int *V, int V_size, int node);
 void add_to_dynamic_array(int **array, int *size, int element);
 void printArray(int *array, int array_size);
 void check_for_duplicates(int *array, int size);
+void sort_array_based_on_dataset(DatasetInfo *dataset, int *array, int array_size, float *Xq);
+
 
 // Functions for the medoid calculation
 int calculate_medoid(Graph *graph, int *sample_point_indexes, int num_sample_points);

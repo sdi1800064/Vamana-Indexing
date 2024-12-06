@@ -113,7 +113,6 @@ void fprint_graph_coordinates(Graph* graph, FILE *outputfd) {
  * @param outputfd The file descriptor to write to
  */
 void fprint_graph(Graph* graph, FILE *outputfd) {
-    printf("Printing graph..\n");
     for (int i = 0; i < graph->num_points; i++) {
         Point p = graph->points[i];
         fprintf(outputfd, " Point %d | category: %d | edges: ", p.index, p.category);
@@ -157,10 +156,7 @@ void addEdge(Point *point, int toIndex) {
  */
 
 void add_to_dynamic_array(int **array, int *size, int element) {
-    printf("Adding %d to array of size %d\n", element, *size);
-    if(element == 0){
-        printf("Adding 0 to array of size %d\n", *size);
-    }
+    // printf("Adding %d to array of size %d\n", element, *size);
 
     if(arrayContains(*array, *size, element)) {
         // printf("Element %d already in array\n", element);
@@ -363,22 +359,42 @@ void sort_array(Graph *graph, int *array, int array_size, float *Xq) {
 
 }
 
+void sort_array_based_on_dataset(DatasetInfo *dataset, int *array, int array_size, float *Xq) {
+    // Create an array to hold distances
+    float *distances = (float *)malloc(array_size * sizeof(float));
+    if (distances == NULL) {
+        perror("Failed to allocate memory for distances");
+        exit(EXIT_FAILURE);
+    }
 
-// Function to sort filterInfo's array of filterPoints based on their filter_index using Bubble Sort
-void sort_filter_array(filterInfo *filter) {
-    if (filter->num_filters <= 1) return; // No need to sort arrays of size 0 or 1
+    // Calculate distances for each index in array and store in distances array
+    for (int i = 0; i < array_size; i++) {
+        int point_index = array[i];
+        DataPoint *point = &dataset->datapoints[point_index];
+        distances[i] = squared_euclidean_distance(point->vectors, Xq, 100);
+    }
 
-    for (int i = 0; i < filter->num_filters - 1; i++) {
-        for (int j = 0; j < filter->num_filters - i - 1; j++) {
-            if (filter->filtersPoints[j].filter_index > filter->filtersPoints[j + 1].filter_index) {
-                // Swap elements
-                filterPoint temp = filter->filtersPoints[j];
-                filter->filtersPoints[j] = filter->filtersPoints[j + 1];
-                filter->filtersPoints[j + 1] = temp;
+    // Sort both the distances and indexes arrays using a basic selection sort
+    for (int i = 0; i < array_size - 1; i++) {
+        int min_idx = i;
+        for (int j = i + 1; j < array_size; j++) {
+            if (distances[j] < distances[min_idx]) {
+                min_idx = j;
             }
         }
+        
+        // Swap distances
+        swap_float(&distances[i], &distances[min_idx]);
+        
+        // Swap corresponding indexes in the array
+        swap(&array[i], &array[min_idx]);
     }
+
+    // Free the temporary distances array
+    free(distances);
+
 }
+
 
 
 /**
@@ -853,10 +869,18 @@ Graph create_random_graph(DatasetInfo dataset, int base_num_dimensions, int max_
 
         // Add random edges to every point until they have max_edges, no duplicates and no self-loops
         graph.points[i].edge_count = 0; // No edges initially
-        while(graph.points[i].edge_count < max_edges) {
+
+        int temp_max_edges = max_edges;
+        if(graph.num_points <= max_edges){
+            temp_max_edges = graph.num_points - 1;
+        }
+
+        while(graph.points[i].edge_count < temp_max_edges) {
+            if(graph.num_points == 1) break;
+            
             int edge = rand() % base_num_points;
-            if (graph.points[edge].index != graph.points[i].index && !arrayContains(graph.points[i].edges, graph.points[i].edge_count, edge)) {
-                graph.points[i].edges[graph.points[i].edge_count] = graph.points[edge].index;
+            if (edge != i && !arrayContains(graph.points[i].edges, graph.points[i].edge_count, edge)) {
+                graph.points[i].edges[graph.points[i].edge_count] = edge;
                 graph.points[i].edge_count++;
             }
         }
@@ -893,7 +917,7 @@ Graph create_random_graph(DatasetInfo dataset, int base_num_dimensions, int max_
  */
 void robustPrune(Graph *graph, int p_index, int *V, int V_size, float a, int R) {
 
-    // add to V all the neighbors of p and remove p from v if it exists
+    // Add to V all the neighbors of p and remove p from v if it exists
     for (int i = 0; i < graph->points[p_index].edge_count; i++) {
         int toIndex = graph->points[p_index].edges[i];
         // Add to V all the neighbors of p
@@ -933,29 +957,34 @@ void robustPrune(Graph *graph, int p_index, int *V, int V_size, float a, int R) 
                 min_index = i;
             }
         }
-        p_star = &graph->points[V[min_index]];
-
-        addEdge(&graph->points[p_index], p_star->index);
-
-        // if the number of neighbors of p is equal to R then break
-        if (graph->points[p_index].edge_count == R) {
-            break;
-        }
-
-        // for every point p' in V
-        for (int i = 0; i < V_size; i++) {
-            // if a * d(p*, p') <= d(p, p') then remove p' from V
-            // d(p*, p') = squared_euclidean_distance(graph->points[V[i]].coordinates, p_star->coordinates, graph->num_dimensions
-            float DISTANCE_PSTAR_PPRIME = squared_euclidean_distance(p_star->coordinates, graph->points[V[i]].coordinates, graph->num_dimensions);
-            float DISTANCE_P_PPRIME = squared_euclidean_distance(graph->points[p_index].coordinates, graph->points[V[i]].coordinates, graph->num_dimensions);
-            if (a * DISTANCE_PSTAR_PPRIME <= DISTANCE_P_PPRIME) {
-                V[i] = V[V_size - 1];
-                V_size--;
+    
+        if(V[min_index] != p_index){
+            p_star = &graph->points[V[min_index]];
+            // printf("Adding edge from %d -> %d\n", p_index, V[min_index]);
+            addEdge(&graph->points[p_index], V[min_index]);
+            // if the number of neighbors of p is equal to R then break
+            if (graph->points[p_index].edge_count == R) {
+                break;
             }
+
+            // for every point p' in V
+            for (int i = 0; i < V_size; i++) {
+                // if a * d(p*, p') <= d(p, p') then remove p' from V
+                // d(p*, p') = squared_euclidean_distance(graph->points[V[i]].coordinates, p_star->coordinates, graph->num_dimensions
+                float DISTANCE_PSTAR_PPRIME = squared_euclidean_distance(p_star->coordinates, graph->points[V[i]].coordinates, graph->num_dimensions);
+                float DISTANCE_P_PPRIME = squared_euclidean_distance(graph->points[p_index].coordinates, graph->points[V[i]].coordinates, graph->num_dimensions);
+                if (a * DISTANCE_PSTAR_PPRIME <= DISTANCE_P_PPRIME) {
+                    V[i] = V[V_size - 1];
+                    V_size--;
+                }
+            }
+        }else{
+            V[min_index] = V[V_size - 1];
+            V_size--;
         }
 
     }
-
+    
 }
 
 /**
@@ -976,9 +1005,9 @@ void robustPrune(Graph *graph, int p_index, int *V, int V_size, float a, int R) 
 void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_size, int **Lamda, int *Lamda_size, int L) {
 
     // Allocate initial space for V and Lamda
-    *V = (int *)malloc(sizeof(int) * graph->num_points);
+    *V = (int *)malloc(sizeof(int));
     *V_size = 0;
-    *Lamda = (int *)malloc(sizeof(int) * graph->num_points);
+    *Lamda = (int *)malloc(sizeof(int));
     *Lamda_size = 0;
 
     // Initialize Lamda with the start point
@@ -1003,7 +1032,7 @@ void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_siz
         float min_distance = FLT_MAX;
         for (int i = 0; i < Lamda_minus_V_size; i++) {
             int current_index = Lamda_minus_V[i];
-            printf("Current index: %d\n", current_index);
+            // printf("Current index: %d\n", current_index);
             float distance = squared_euclidean_distance(graph->points[current_index].coordinates, Xq, graph->num_dimensions);
             if (distance < min_distance) {
                 min_distance = distance;
@@ -1012,8 +1041,10 @@ void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_siz
         }
         Point *p_star = &graph->points[closest_index];
 
-        // Add p* to V
-        add_to_dynamic_array(V, V_size, p_star->index);
+        // Add p* position to V
+        // add_to_dynamic_array(V, V_size, p_star->index);
+        add_to_dynamic_array(V, V_size, closest_index);
+
 
         // Add the neighbors of p* to Lamda
         for (int i = 0; i < p_star->edge_count; i++) {
@@ -1036,6 +1067,7 @@ void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_siz
         
         // Update Lamda_minus_V
         Lamda_minus_V = get_the_difference(*Lamda, *Lamda_size, *V, *V_size, &Lamda_minus_V_size); 
+
     }
     free(Lamda_minus_V);
 }
@@ -1061,12 +1093,12 @@ void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_siz
  */
 Graph vamana_indexing(DatasetInfo dataset, int L, float a, int R) {
 
-    printf("Starting Vamana Indexing\n");
     // Initialize a random graph from the dataset
     Graph graph = create_random_graph(dataset, 100, R);
-    printf("Created random graph from dataset\n");
+    if(graph.num_points < R){
+        return graph;
+    }
 
-    // exit(1);
 
     // Calculating the medoid
     // ======= CHANGE THE PERCENTAGE OF THE SAMPLES HERE ======== //
@@ -1080,9 +1112,8 @@ Graph vamana_indexing(DatasetInfo dataset, int L, float a, int R) {
         exit(1);
     }
 
-    int temp_medoid_index = calculate_medoid(&graph, sample_point_indexes, num_sample_points);  // Position in the graph
-    int medoid_index = graph.points[temp_medoid_index].index;                                   // Actual index
-    printf("Medoid index: %d\n", medoid_index);
+    int medoid_index = calculate_medoid(&graph, sample_point_indexes, num_sample_points);       // Position in the graph
+    // int temp_medoid_index = graph.points[medoid_index].index;                                   // Actual index
 
     // traverse the graph in a random way without repetitions
     bool *shuffled_point_indexes = (bool *)calloc(graph.num_points, sizeof(bool));
@@ -1097,25 +1128,23 @@ Graph vamana_indexing(DatasetInfo dataset, int L, float a, int R) {
         s_index = rand() % graph.num_points;
         if (!shuffled_point_indexes[s_index]) {
             shuffled_point_indexes[s_index] = true;
-            printf("Indexing graph point %d of index %d\n", s_index, graph.points[s_index].index);
+            // printf("Indexing graph %d point %d | %d / %d\n", graph.points[s_index].category, s_index, i, graph.num_points);
 
             // =============== GREEDY SEARCH ================ //
-            printf("Starting greedy search\n");
             greedy_search(&graph, graph.points[s_index].coordinates, medoid_index, &V, &V_size, &lamda, &lamda_size, L);
-            printf("Finished greedy search\n");
             // =============== ROBUST PRUNE ================ //
-            printf("Starting robust prune\n");
+
             robustPrune(&graph, s_index, V, V_size, a, R);
-            printf("Finished robust prune\n");
 
             int *new_V = NULL;
             int new_V_size = 0;
-
+            
             // for every neighbor of random point p'
             for(int j = 0; j < graph.points[s_index].edge_count; j++) {
 
                 // if | neighbor(p') U random point | > R then
                 Point *P_PRIME = &graph.points[graph.points[s_index].edges[j]];
+                int P_PRIME_graph_position = graph.points[s_index].edges[j];
                 
                 if(P_PRIME->edge_count + 1 > R) {
                     // run robustPrune(p', Neighbors of p' U random point, a, R)
@@ -1131,7 +1160,7 @@ Graph vamana_indexing(DatasetInfo dataset, int L, float a, int R) {
                     add_to_dynamic_array(&new_V, &new_V_size, s_index);
 
                     // run robustPrune(p', new_V, a, R)
-                    robustPrune(&graph, P_PRIME->index, new_V, new_V_size, a, R);
+                    robustPrune(&graph, P_PRIME_graph_position, new_V, new_V_size, a, R);
                     
                 } else{
                     // else add to neighbors of p' the random point
@@ -1173,8 +1202,9 @@ Graph vamana_indexing(DatasetInfo dataset, int L, float a, int R) {
  */
 Graph* stitched_vamana_indexing(DatasetInfo* dataset, int L_small, float a, int R_small, int R_stitched) {
     
-    printf("Starting Stitched Vamana Indexing\n");
-    Graph stitched_graph = initialise_graph(dataset, R_small);
+    printf("Stitched Vamana Indexing: ");
+    fflush(stdout);
+    // Graph stitched_graph = initialise_graph(dataset, R_small);
 
 
     Graph *filter_graph = (Graph *)malloc(dataset->filterInfo.num_filters * sizeof(Graph));
@@ -1189,11 +1219,9 @@ Graph* stitched_vamana_indexing(DatasetInfo* dataset, int L_small, float a, int 
         exit(1);
     }
 
-    // print_dataset(dataset);
-    // printf("printed dataset\n");
     // Find all the indexed with that filter
     for( int i = 0; i < dataset->filterInfo.num_filters; i++){
-        printf("Filter: %d\n", dataset->filterInfo.filtersPoints[i].filter_index);
+
         // Find all the points fo each filter
         filter_dataset[i].num_vectors = dataset->filterInfo.filtersPoints[i].count;
         filter_dataset[i].datapoints = (DataPoint *)calloc(filter_dataset[i].num_vectors, sizeof(DataPoint));
@@ -1201,7 +1229,7 @@ Graph* stitched_vamana_indexing(DatasetInfo* dataset, int L_small, float a, int 
             printf("Memory allocation failed filter_dataset.datapoint!\n");
             exit(1);
         }
-        printf("Copying %d indexes..\n", filter_dataset[i].num_vectors);
+
         for(int j = 0; j < filter_dataset[i].num_vectors; j++){
             int filter_point_index = dataset->filterInfo.filtersPoints[i].point_indexes[j];
             filter_dataset[i].datapoints[j].category = dataset->datapoints[filter_point_index].category;
@@ -1212,27 +1240,32 @@ Graph* stitched_vamana_indexing(DatasetInfo* dataset, int L_small, float a, int 
             }
 
         }
-        printf("Copied indexed from filter to filter graph\n");
 
         // For each filter, run the vamana algorithm
-        print_dataset(&filter_dataset[i]);
         filter_graph[i] = vamana_indexing(filter_dataset[i], L_small, a, R_small);
-        printf("Filter %d finished\n", i);
 
     }
 
-    for(int i = 0; i < stitched_graph.num_points; i++){
-        printf("Running filteredRobustPrune for point: %d\n", i);
-        // Run the filteredRobustPrune algorithm
-        // void filtered_Robust_prune(Graph *graph, int p_index, int *V, int V_size, float a, int R)
-        int u_index = stitched_graph.points[i].index;
-        int *V = stitched_graph.points[u_index].edges;
-        int V_size = stitched_graph.points[u_index].edge_count;
-        filtered_Robust_prune(filter_graph, u_index, V, V_size, a, R_stitched);
-        printf("Finished running filteredRobustPrune for point: %d\n", i);
-    }
+    // Stitch the graphs
 
-    // For each Visited run filteredRobustPrune
+    // for(int i = 0; i < stitched_graph.num_points; i++){
+    //     printf("Running filteredRobustPrune for point: %d\n", i);
+    //     // Run the filteredRobustPrune algorithm
+    //     // void filtered_Robust_prune(Graph *graph, int p_index, int *V, int V_size, float a, int R)
+    //     int u_index = stitched_graph.points[i].index;
+    //     int *V = stitched_graph.points[u_index].edges;
+    //     int V_size = stitched_graph.points[u_index].edge_count;
+    //     filtered_Robust_prune(filter_graph, u_index, V, V_size, a, R_stitched);
+    //     printf("Finished running filteredRobustPrune for point: %d\n", i);
+    // }
+
+    for(int i = 0; i < dataset->filterInfo.num_filters; i++){
+        free(filter_dataset[i].datapoints);
+    }
+    free(filter_dataset);
+    printf("Done.\n");
+    fflush(stdout);
+    // Return array of graphs
     return filter_graph;
 }
 
