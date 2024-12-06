@@ -3,34 +3,79 @@
 #include "../headers/dataset.h"
 #include "../headers/graph.h"
 
+void sort_filter_info(DatasetInfo* dataset) {
+    filterInfo* filters = &dataset->filterInfo;
+    int num_filters = filters->num_filters;
+
+    // Use bubble sort to sort the filters based on filter_index
+    for (int i = 0; i < num_filters - 1; i++) {
+        for (int j = 0; j < num_filters - i - 1; j++) {
+            if (filters->filtersPoints[j].filter_index > filters->filtersPoints[j + 1].filter_index) {
+                // Swap the filterPoints
+                filterPoint temp = filters->filtersPoints[j];
+                filters->filtersPoints[j] = filters->filtersPoints[j + 1];
+                filters->filtersPoints[j + 1] = temp;
+            }
+        }
+    }
+}
+
 // Function to dynamically add a filter or update its count
-void add_or_increment_filter(filterInfo *filters, int category) {
+void add_or_increment_filter(filterInfo *filtersInfo, int point_category, int point_index) {
+    // The filters array is empty
+    if( filtersInfo->num_filters == 0) {
+        filtersInfo->filtersPoints[0].filter_index = point_category;
+        filtersInfo->filtersPoints[0].count = 1;
+        filtersInfo->filtersPoints[0].point_indexes = (int *)malloc(sizeof(int));
+        filtersInfo->filtersPoints[0].point_indexes[0] = point_index;
+        filtersInfo->num_filters++;
+        return;
+    }
+
     // Check if the filter already exists
-    for (int i = 0; i < filters->filters_size; i++) {
-        if (filters->filters[0][i] == category) {
-            // Increment the count for this filter
-            filters->filters[1][i]++;
+    for ( int i = 0; i < filtersInfo->num_filters; i++) {
+        // If the filter already exists, Add it to the point indexes
+        if ( filtersInfo->filtersPoints[i].filter_index == point_category) {
+            filtersInfo->filtersPoints[i].count++;
+            filtersInfo->filtersPoints[i].point_indexes = (int *)realloc(filtersInfo->filtersPoints[i].point_indexes, (filtersInfo->filtersPoints[i].count) * sizeof(int));
+            filtersInfo->filtersPoints[i].point_indexes[filtersInfo->filtersPoints[i].count - 1] = point_index;
             return;
         }
     }
 
-    // If not found, add a new filter
-    filters->filters_size++;
-    filters->filters[0] = (int *)realloc(filters->filters[0], filters->filters_size * sizeof(int));
-    filters->filters[1] = (int *)realloc(filters->filters[1], filters->filters_size * sizeof(int));
+    // If the filter doesn't exist, create it
+    filtersInfo->filtersPoints = (filterPoint *)realloc(filtersInfo->filtersPoints, (filtersInfo->num_filters + 1) * sizeof(filterPoint));
+    filtersInfo->filtersPoints[filtersInfo->num_filters].filter_index = point_category;
+    filtersInfo->filtersPoints[filtersInfo->num_filters].count = 1;
+    filtersInfo->filtersPoints[filtersInfo->num_filters].point_indexes = (int *)malloc(sizeof(int));
+    filtersInfo->filtersPoints[filtersInfo->num_filters].point_indexes[0] = point_index;
+    filtersInfo->num_filters++;
 
-    if (!filters->filters[0] || !filters->filters[1]) {
+}
+
+
+filterInfo initialise_filters() {
+
+    filterInfo filtersInfo;
+    filtersInfo.num_filters = 0;
+
+    filtersInfo.filtersPoints = (filterPoint *)malloc(sizeof(filterPoint));
+    if (!filtersInfo.filtersPoints) {
         perror("Memory allocation error for filters");
         exit(EXIT_FAILURE);
     }
 
-    // Add the new filter and initialize its count to 1
-    filters->filters[0][filters->filters_size - 1] = category;
-    filters->filters[1][filters->filters_size - 1] = 1;
+    filtersInfo.filtersPoints[0].filter_index = -1;
+    filtersInfo.filtersPoints[0].count = 0;
+    filtersInfo.filtersPoints[0].point_indexes = (int *)malloc(sizeof(int));
+
+    return filtersInfo;
 }
 
 // Function to read the dataset
-DatasetInfo* read_dataset(const char *filename, filterInfo *filters) {
+DatasetInfo* read_dataset(const char *filename) {
+    printf("Reading dataset from %s: ", filename);
+    fflush(stdout);
     FILE *file = fopen(filename, "rb");
     if (!file) {
         perror("Error opening file");
@@ -53,6 +98,7 @@ DatasetInfo* read_dataset(const char *filename, filterInfo *filters) {
         return NULL;
     }
     dataset->num_vectors = (int)num_vectors;
+    dataset->filterInfo = initialise_filters();
 
     // Allocate memory for the DataPoint array
     dataset->datapoints = (DataPoint *)malloc(num_vectors * sizeof(DataPoint));
@@ -67,6 +113,7 @@ DatasetInfo* read_dataset(const char *filename, filterInfo *filters) {
     const int vector_size = (2 + 100) * sizeof(float); // 2 attributes + 100 dimensions
 
     // Read each vector from the file
+    int count = 0;
     for (int i = 0; i < dataset->num_vectors; i++) {
         float buffer[102];
 
@@ -80,6 +127,7 @@ DatasetInfo* read_dataset(const char *filename, filterInfo *filters) {
         }
 
         // Populate the DataPoint structure
+        dataset->datapoints[i].point_index = i;
         dataset->datapoints[i].category = (int)buffer[0];
         dataset->datapoints[i].timestamp = buffer[1];
         for (int j = 0; j < 100; j++) {
@@ -87,10 +135,16 @@ DatasetInfo* read_dataset(const char *filename, filterInfo *filters) {
         }
 
         // Update the filters with the category
-        add_or_increment_filter(filters, dataset->datapoints[i].category);
+        // printf("Updating index %d to filter index %d.\n", i, dataset->datapoints[i].category);
+        count++;
+        add_or_increment_filter(&dataset->filterInfo, dataset->datapoints[i].category, dataset->datapoints[i].point_index);
+        
     }
 
+    sort_filter_info(dataset);
     fclose(file);
+    printf("Done.\n");
+    fflush(stdout);
     return dataset;
 }
 
@@ -102,11 +156,11 @@ void free_dataset(DatasetInfo *dataset) {
 
 void print_dataset(DatasetInfo *dataset) {
     for (int i = 0; i < dataset->num_vectors; i++) {
-        printf("Vector %d: Category = %d, Timestamp = %f, Vectors = ", i, dataset->datapoints[i].category, dataset->datapoints[i].timestamp);
+        printf("index %d: Category = %d, Timestamp = %f, Vectors :\n ", dataset->datapoints[i].point_index, dataset->datapoints[i].category, dataset->datapoints[i].timestamp);
         for (int j = 0; j < 100; j++) {
             printf("%f ", dataset->datapoints[i].vectors[j]);
         }
-        printf("\n");
+        printf("\n\n");
     }
 }
 
@@ -121,6 +175,8 @@ void cprint_dataset(DatasetInfo *dataset, int target_category) {
 
 // Function to read the query set
 QueryInfo* read_query_dataset(const char *filename) {
+    printf("Reading queryset from %s: ", filename);
+    fflush(stdout);
     FILE *file = fopen(filename, "rb");
     if (!file) {
         perror("Error opening file");
@@ -134,6 +190,7 @@ QueryInfo* read_query_dataset(const char *filename) {
         fclose(file);
         return NULL;
     }
+    // printf("Number of queries: %d\n", num_queries);
 
     // Allocate memory for the QueryInfo structure
     QueryInfo *query_info = (QueryInfo *)malloc(sizeof(QueryInfo));
@@ -180,6 +237,8 @@ QueryInfo* read_query_dataset(const char *filename) {
     }
 
     fclose(file);
+    printf("Done.\n");
+    fflush(stdout);
     return query_info;
 }
 
@@ -194,9 +253,9 @@ void print_query_dataset(QueryInfo *dataset) {
     for (int i = 0; i < dataset->num_queries; i++) {
         QueryPoint query = dataset->queries[i];
         printf("Vector %d: Query-Category = %d, Filter = %d, Timestamp = %f, Timestamp = %f, Vectors = ", i, query.query_type, query.v, query.l, query.r);
-        for (int j = 0; j < 100; j++) {
-            printf("%f ", query.query_vector[j]);
-        }
+        // for (int j = 0; j < 100; j++) {
+        //     printf("%f ", query.query_vector[j]);
+        // }
         printf("\n");
     }
 }
@@ -209,4 +268,177 @@ void cprint_query_dataset(QueryInfo *dataset, int category) {
             printf("\n");
         }
     }
+}
+
+
+int** readGroundTruth(char* filename, int num_queries) {
+    printf("Reading ground truth from file %s: ", filename);
+    fflush(stdout);
+    FILE *file = fopen(filename, "rb");
+    if (!file) {
+        perror("Error opening file");
+        return NULL;
+    }
+    int** ground_truth = (int**)malloc(num_queries * sizeof(int*));
+    for(int i = 0; i < num_queries; i++) {
+        ground_truth[i] = (int*)malloc(100 * sizeof(int));
+        for(int j = 0; j < 100; j++) {
+            if(fread(&ground_truth[i][j], sizeof(int), 1, file) != 1) {
+                perror("Error reading number of vectors");
+                fclose(file);
+                return NULL;
+            }   
+        }
+    }
+    fclose(file);
+    printf("Done.\n");
+    fflush(stdout);
+    return ground_truth;
+}
+
+
+void writeGraphs(Graph* graph, int num_of_graphs, char* filename) {
+    printf("Writing graphs to file %s: ", filename);
+    fflush(stdout);
+    FILE *file = fopen(filename, "wb");
+    if (!file) {
+        perror("Error opening file");
+        return;
+    }
+
+    fwrite(&num_of_graphs, sizeof(int), 1, file);
+    for(int i = 0; i < num_of_graphs; i++){
+        fwrite(&graph[i].num_points, sizeof(int), 1, file);
+        fwrite(&graph[i].num_dimensions, sizeof(int), 1, file);
+        for(int j = 0; j < graph[i].num_points; j++) {
+            fwrite(&graph[i].points[j].index, sizeof(int), 1, file);
+            fwrite(&graph[i].points[j].category, sizeof(int), 1, file);
+            fwrite(&graph[i].points[j].edge_count, sizeof(int), 1, file);
+            for(int k = 0; k < graph[i].points[j].edge_count; k++) {
+                fwrite(&graph[i].points[j].edges[k], sizeof(int), 1, file);
+            }
+            for(int k = 0; k < graph[i].num_dimensions; k++) {
+                fwrite(&graph[i].points[j].coordinates[k], sizeof(float), 1, file);
+            }
+        }
+    }
+    fclose(file);
+    printf("Done.\n");
+    fflush(stdout);
+}
+
+Graph* readGraphs(char* filename, int* num_of_graphs) {
+    printf("Reading graphs from file %s: ", filename);
+    fflush(stdout);
+
+    FILE *file = fopen(filename, "rb");
+    if (!file) {
+        perror("Error opening file");
+        exit(EXIT_FAILURE);
+    }
+
+    // Read the number of graphs
+    if (fread(num_of_graphs, sizeof(int), 1, file) != 1) {
+        perror("Error reading number of graphs");
+        fclose(file);
+        exit(EXIT_FAILURE);
+    }
+
+    // printf("Number of graphs to be read: %d\n", *num_of_graphs);
+    Graph* graph = (Graph*)malloc(*num_of_graphs * sizeof(Graph));
+    if (!graph) {
+        perror("Memory allocation error for graphs");
+        fclose(file);
+        exit(EXIT_FAILURE);
+    }
+
+    for(int i = 0; i < *num_of_graphs; i++) {
+     
+        // Read the number of points
+        if (fread(&graph[i].num_points, sizeof(int), 1, file) != 1) {
+            perror("Error reading number of points");
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+
+        // Read the number of dimensions
+        if (fread(&graph[i].num_dimensions, sizeof(int), 1, file) != 1) {
+            perror("Error reading number of dimensions");
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+
+        // Allocate memory for the points
+        graph[i].points = (Point *)malloc(graph[i].num_points * sizeof(Point));
+        if (!graph[i].points) {
+            perror("Memory allocation error for points");
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+
+        // Read each point from the file
+        for (int j = 0; j < graph[i].num_points; j++) {
+            Point *point = &graph[i].points[j];
+
+            // Read the index
+            if (fread(&point->index, sizeof(int), 1, file) != 1) {
+                perror("Error reading index");
+                fclose(file);
+                exit(EXIT_FAILURE);
+            }
+
+            // Read the category
+            if (fread(&point->category, sizeof(int), 1, file) != 1) {
+                perror("Error reading category");
+                fclose(file);
+                exit(EXIT_FAILURE);
+            }
+
+            // Read the edge count
+            if (fread(&point->edge_count, sizeof(int), 1, file) != 1) {
+                perror("Error reading edge count");
+                fclose(file);
+                exit(EXIT_FAILURE);
+            }
+
+            // Allocate memory for the edges
+            point->edges = (int *)malloc(point->edge_count * sizeof(int));
+            if (!point->edges) {
+                perror("Memory allocation error for edges");
+                fclose(file);
+                exit(EXIT_FAILURE);
+            }
+
+            // Read the edges
+            for (int k = 0; k < point->edge_count; k++) {
+                if (fread(&point->edges[k], sizeof(int), 1, file) != 1) {
+                    perror("Error reading edge");
+                    fclose(file);
+                    exit(EXIT_FAILURE);
+                }
+            }
+
+            // Allocate memory for the coordinates
+            point->coordinates = (float *)malloc(graph[i].num_dimensions * sizeof(float));
+            if (!point->coordinates) {
+                perror("Memory allocation error for coordinates");
+                fclose(file);
+                exit(EXIT_FAILURE);
+            }
+
+            // Read the coordinates
+            for (int k = 0; k < graph[i].num_dimensions; k++) {
+                if (fread(&point->coordinates[k], sizeof(float), 1, file) != 1) {
+                    perror("Error reading coordinate");
+                    fclose(file);
+                    exit(EXIT_FAILURE);
+                }
+            }
+        }
+   
+    }
+    fclose(file);
+    printf("Done.\n");
+    fflush(stdout);
+    return graph;
 }

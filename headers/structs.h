@@ -6,6 +6,18 @@
 // ==================== Structures ==================== //
 
 typedef struct {
+    int filter_index;
+    int count;
+    int *point_indexes;
+} filterPoint;
+
+typedef struct{
+    filterPoint *filtersPoints;
+    int num_filters;
+} filterInfo;
+
+typedef struct {
+    int point_index;
     int category;  // Array for discretized categorical attribute C
     float timestamp;  // Array for normalized timestamp attribute T
     float vectors[100];     // Array for the remaining 100-dimensional vectors
@@ -15,11 +27,12 @@ typedef struct {
 typedef struct {
     int num_vectors;
     DataPoint *datapoints;
+    filterInfo filterInfo;
 } DatasetInfo;
 
 
 typedef struct {
-    int query_type; // 0: categorical, 1: timestamp, 2: categorical and timestamp, 3: categorical and timestamp
+    int query_type; // 0: no attribute, 1: categorical, 2: timestamp, 3: categorical and timestamp
     int v; // Value for categorical attribute (or -1)
     float l; // Lower bound for timestamp attribute (or -1)
     float r; // Upper bound for timestamp attribute (or -1)
@@ -32,10 +45,6 @@ typedef struct {
     QueryPoint *queries;
 } QueryInfo;
 
-typedef struct{
-    int *filters[2];
-    int filters_size;
-} filterInfo;
 
 // Struct for a single point
 typedef struct {
