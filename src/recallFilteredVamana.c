@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
 
     // Seed the random number generator with the current time
     srand((unsigned int)t);
-    
+
     printf("Starting...\n");
     // Initialize variables
     char *base_file_name = NULL;
@@ -23,6 +23,8 @@ int main(int argc, char *argv[]) {
     char *groundtruth_file_name = NULL;
     int k = -1;
     int L = -1;
+    int R = -1;
+    int a = -1;
 
     // Iterate through command line arguments
     for (int i = 1; i < argc; i++) {
@@ -41,7 +43,16 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "-k") == 0 && i + 1 < argc) {
             k = atoi(argv[i + 1]);
             i++;
-        } else if (strcmp(argv[i], "-L") == 0 && i + 1 < argc) {
+        }
+        else if (strcmp(argv[i], "-R") == 0 && i + 1 < argc) {
+            R = atoi(argv[i + 1]);
+            i++;
+        }
+        else if (strcmp(argv[i], "-a") == 0 && i + 1 < argc) {
+            a = atoi(argv[i + 1]);
+            i++;
+        }
+        else if (strcmp(argv[i], "-L") == 0 && i + 1 < argc) {
             L = atoi(argv[i + 1]);
             i++;
         }
@@ -64,7 +75,7 @@ int main(int argc, char *argv[]) {
 
     // ===================== CREATE OUTPUT FILE IF NEEDED ================== //
     // Create an output file
-    
+
     // FILE *file_check = fopen("output.txt", "r");
     // if (file_check != NULL) {
     //     // File exists, so close it and delete it
@@ -104,10 +115,18 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    // Initialise the graphs
-    Graph* stitchedGraphs;
+    //Check if the file exists,if it does not create it and write the data else read the data
+
+    Graph* filteredVamanaGraph;
     int stitchedGraphs_size;
-    stitchedGraphs = readGraphs(graph_file_name, &stitchedGraphs_size);
+    // Check if the file exists
+    if (access(graph_file_name, F_OK) != -1) {
+        // File exists, read the data
+        filteredVamanaGraph = readGraphs(graph_file_name, &stitchedGraphs_size);
+    } else {
+         filteredVamanaGraph = filtered_vamana_indexing(dataSet, L,a,R,&(dataSet->filterInfo));
+    }
+
 
 
     // ============ RECALL AFTER VAMANA INDEXING ============= //
@@ -121,7 +140,7 @@ int main(int argc, char *argv[]) {
     int count = 0;
     int prediction_count = 0;
     int ground_truth_count[querySet->num_queries];
-    
+
     // Calculate the number of groundtruths for each query
     for(int i = 0; i < querySet->num_queries; i++) {
         ground_truth_count[i] = 0;
@@ -143,25 +162,21 @@ int main(int argc, char *argv[]) {
     for( int i = 0; i < querySet->num_queries; i++) {
         int query_type = querySet->queries[i].query_type;
         if(query_type == 0) {
-            // printf("Query %d of type %d\n", i, query_type);        
+            // printf("Query %d of type %d\n", i, query_type);
             int sumOfAllClosest = 0;
             int* arrayOfPredictedIndexes = (int*)malloc(sizeof(int));
-            for(int j = 0; j < stitchedGraphs_size; j++) {
-                int random_graph_index = rand() % stitchedGraphs[j].num_points;
 
-                greedy_search(&stitchedGraphs[j], querySet->queries[i].query_vector, random_graph_index, &V, &V_size, &K_CLOSEST, &k_closest_size, L);
-                
-                for( int k = 0; k < k_closest_size; k++) {
-                    add_to_dynamic_array(&arrayOfPredictedIndexes, &sumOfAllClosest, stitchedGraphs[j].points[K_CLOSEST[k]].index);
-                }
-                
-                V = NULL;
-                V_size = 0;
-                k_closest_size = 0;
+            int* V = NULL;
+            int *lamda = NULL;
+            int lamda_size = 0;
+            int V_size = 0;
+            int startIndex = filteredVamanaGraph->medoid;
+            filtered_greedy_search(filteredVamanaGraph, querySet->queries[i].query_vector, &startIndex, k_closest_size, &V,&V_size,&lamda,&lamda_size,L, querySet->queries[i].v);
+//             MUST INCLUDE THE DATASET
 
+            for( int k = 0; k < k_closest_size; k++) {
+                    add_to_dynamic_array(&arrayOfPredictedIndexes, &sumOfAllClosest,lamda[k]);
             }
-
-            // MUST INCLUDE THE DATASET
             sort_array_based_on_dataset(dataSet, arrayOfPredictedIndexes, sumOfAllClosest, querySet->queries[i].query_vector);
             for(int j = 0; j < k; j++) {
                 int predicted_index = arrayOfPredictedIndexes[j];
@@ -180,22 +195,41 @@ int main(int argc, char *argv[]) {
             recall += count / k;
             total_count += count;
             count = 0;
-        
+
         } else if(query_type == 1 && querySet->queries[i].v != 144) {
             // printf("Query %d of type %d and filter %d\n", i, query_type, querySet->queries[i].v);
 
             int query_filter = querySet->queries[i].v;
             // printf("Filter_graph: %d with first index -> %d | filter %d\n", query_filter, stitchedGraphs[query_filter].points[0].index, stitchedGraphs[query_filter].points[0].category);
-            int random_graph_index = rand() % stitchedGraphs[query_filter].num_points;
+            int sumOfAllClosest = 0;
+            int* arrayOfPredictedIndexes = (int*)malloc(sizeof(int));
 
-            greedy_search(&stitchedGraphs[query_filter], querySet->queries[i].query_vector, random_graph_index, &V, &V_size, &K_CLOSEST, &k_closest_size, L);
-            
-            int k_minimum = k;
-            if(k_closest_size < k) {
-                k_minimum = k_closest_size;
+            int* V = NULL;
+            int *lamda = NULL;
+            int lamda_size = 0;
+            int V_size = 0;
+            int filteredmedoid;
+            for(int i =0; i<=filteredVamanaGraph->filteredMedoids.size; i++){
+                if(filteredVamanaGraph->filteredMedoids.metoids[i].category == query_filter){
+                    filteredmedoid = i;
+                    break;
+                }
             }
-            for(int k = 0; k < k_minimum; k++) {
-                int predicted_index = stitchedGraphs[query_filter].points[K_CLOSEST[k]].index;
+            filtered_greedy_search(filteredVamanaGraph, querySet->queries[i].query_vector, &filteredmedoid, k_closest_size, &V,&V_size,&lamda,&lamda_size,L, querySet->queries[i].v);
+
+            for( int k = 0; k < lamda_size; k++) {
+                add_to_dynamic_array(&arrayOfPredictedIndexes, &sumOfAllClosest,lamda[k]);
+            }
+            sort_array_based_on_dataset(dataSet, arrayOfPredictedIndexes, sumOfAllClosest, querySet->queries[i].query_vector);
+
+
+            int k_a = lamda_size;
+            if(lamda_size < L) {
+                k_a = lamda_size;
+            }
+
+            for(int j = 0; j < k_a; j++) {
+                int predicted_index = arrayOfPredictedIndexes[j];
                 for(int l = 0; l < 100; l++) {
                     if(groundTruthSet[i][l] == -1){
                         break;
@@ -204,17 +238,17 @@ int main(int argc, char *argv[]) {
                         count++;
                         break;
                     }
-                }                   
+                }
             }
             // printf("Query %d: Found %d / %d\n", i, count, k_minimum);
-            prediction_count += k_minimum;
-            recall += count / k_minimum;
+            prediction_count += k_a;
+            recall += count / 100;
             total_count += count;
             count = 0;
             V = NULL;
             V_size = 0;
             k_closest_size = 0;
-        } 
+            }
     }
     printf("Done.\n");
     fflush(stdout);
@@ -227,8 +261,8 @@ int main(int argc, char *argv[]) {
     printf("Recall: %.3f%%\n", recall*100);
 
     // ============== FREE MEMORY ================= //
-    
-    
+
+
     free(dataSet->datapoints);
     free(dataSet);
     free(querySet->queries);

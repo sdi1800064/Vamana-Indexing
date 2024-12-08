@@ -55,14 +55,6 @@ typedef struct {
     int *edges;            // Array of Outgoing edges (connections to other points)
 } Point;
 
-// Struct for the whole graph
-typedef struct {
-    Point *points; // Array of points
-    int num_dimensions; // Number of dimensions of each point
-    int num_points; // Number of vectors in the graph
-} Graph;
-
-// ==================== Structures ==================== //
 typedef struct {
     int index;
     int category;
@@ -72,6 +64,17 @@ typedef  struct {
     FilteredMedoid*metoids;
     int size;
 } FilteredMethoidList;
+
+// Struct for the whole graph
+typedef struct {
+    Point *points; // Array of points
+    int num_dimensions; // Number of dimensions of each point
+    int num_points; // Number of vectors in the graph
+    FilteredMethoidList filteredMedoids;
+    int  medoid;
+} Graph;
+
+// ==================== Structures ==================== //
 
 
 
