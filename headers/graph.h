@@ -39,7 +39,6 @@ int* sample_points(Graph graph, int num_sample_points);
 
 void filtered_Robust_prune(Graph *graph, int p_index, int *V, int V_size, float a, int R);
 void filtered_greedy_search(Graph *graph, float *Xq, int* start_index, int start_index_size, int **V, int *V_size, int **Lamda, int *Lamda_size, int L, int query_filter);
-Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R);
 
 void robustPrune(Graph *graph, int p_index, int *V, int V_size, float a, int R);
 void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_size, int **Lamda, int *Lamda_size, int L);
@@ -49,7 +48,7 @@ int calculate_medoid(Graph *graph, int *sample_point_indexes, int num_sample_poi
 FilteredMethoidList * get_filtered_medoids(Graph *graph, int *t, filterInfo *filterInfo);
 int find_medoid_for_point(FilteredMethoidList* filteredMedoids, Point* point, int medoid_index);
 
-FilteredMedoid * findClosestDataPoints(Point **groupedData, int *groupSizes, int numCategories, int t);
+FilteredMedoid * findClosestDataPoints(Point **groupedData, filterInfo *groupSizes, int numCategories, int t);
 
 
 
