@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     for(int i = 0; i < num_of_graphs; i++){
         free_graph(graph[i]);
     }
-    printf("Time taken to index all graphs %ld seconds || Time taken for the whole program %ld seconds\n", time_vamana, difftime(time(NULL), t));
+    printf("Time taken to index all graphs %.2f seconds || Time taken for the whole program %.2f seconds\n", time_vamana, difftime(time(NULL), t));
     free(graph);
     free_dataset(dataSet);
     printf("Exiting program\n");
