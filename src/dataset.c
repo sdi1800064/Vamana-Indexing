@@ -442,3 +442,208 @@ Graph* readGraphs(char* filename, int* num_of_graphs) {
     fflush(stdout);
     return graph;
 }
+
+void writeVamanaGraph(Graph* graph, const char* filename) {
+    printf("Writing graph to file %s: ", filename);
+    fflush(stdout);
+
+    FILE *file = fopen(filename, "wb");
+    if (!file) {
+        perror("Error opening file for writing");
+        return;
+    }
+
+    // Write basic graph info
+    if (fwrite(&graph->num_points, sizeof(int), 1, file) != 1 ||
+        fwrite(&graph->num_dimensions, sizeof(int), 1, file) != 1) {
+        perror("Error writing graph metadata");
+        fclose(file);
+        return;
+    }
+
+    // Write each point
+    for (int i = 0; i < graph->num_points; i++) {
+        Point *p = &graph->points[i];
+
+        // Write index, category, edge_count
+        if (fwrite(&p->index, sizeof(int), 1, file) != 1 ||
+            fwrite(&p->category, sizeof(int), 1, file) != 1 ||
+            fwrite(&p->edge_count, sizeof(int), 1, file) != 1) {
+            perror("Error writing point metadata");
+            fclose(file);
+            return;
+        }
+
+        // Write edges
+        for (int e = 0; e < p->edge_count; e++) {
+            if (fwrite(&p->edges[e], sizeof(int), 1, file) != 1) {
+                perror("Error writing point edges");
+                fclose(file);
+                return;
+            }
+        }
+
+        // Write coordinates
+        for (int d = 0; d < graph->num_dimensions; d++) {
+            if (fwrite(&p->coordinates[d], sizeof(float), 1, file) != 1) {
+                perror("Error writing point coordinates");
+                fclose(file);
+                return;
+            }
+        }
+    }
+
+    // Write the medoid
+    if (fwrite(&graph->medoid, sizeof(int), 1, file) != 1) {
+        perror("Error writing medoid");
+        fclose(file);
+        return;
+    }
+
+    // Write the filteredMedoids size
+    if (fwrite(&graph->filteredMedoids.size, sizeof(int), 1, file) != 1) {
+        perror("Error writing filteredMedoids size");
+        fclose(file);
+        return;
+    }
+
+    // Write each filtered medoid (index, category)
+    for (int m = 0; m < graph->filteredMedoids.size; m++) {
+        if (fwrite(&graph->filteredMedoids.metoids[m].index, sizeof(int), 1, file) != 1 ||
+            fwrite(&graph->filteredMedoids.metoids[m].category, sizeof(int), 1, file) != 1) {
+            perror("Error writing filtered medoid");
+            fclose(file);
+            return;
+        }
+    }
+
+    fclose(file);
+    printf("Done.\n");
+    fflush(stdout);
+}
+
+Graph* readGraph(const char* filename) {
+    printf("Reading graph from file %s: ", filename);
+    fflush(stdout);
+
+    FILE *file = fopen(filename, "rb");
+    if (!file) {
+        perror("Error opening file for reading");
+        exit(EXIT_FAILURE);
+    }
+
+    Graph* graph = (Graph*)malloc(sizeof(Graph));
+    if (!graph) {
+        perror("Memory allocation error for graph");
+        fclose(file);
+        exit(EXIT_FAILURE);
+    }
+
+    // Read number_of_points and number_of_dimensions
+    if (fread(&graph->num_points, sizeof(int), 1, file) != 1 ||
+        fread(&graph->num_dimensions, sizeof(int), 1, file) != 1) {
+        perror("Error reading graph metadata");
+        fclose(file);
+        exit(EXIT_FAILURE);
+    }
+
+    // Allocate points
+    graph->points = (Point*)malloc(graph->num_points * sizeof(Point));
+    if (!graph->points) {
+        perror("Memory allocation error for points");
+        fclose(file);
+        exit(EXIT_FAILURE);
+    }
+
+    // Read each point
+    for (int i = 0; i < graph->num_points; i++) {
+        Point *p = &graph->points[i];
+
+        // Read index, category, edge_count
+        if (fread(&p->index, sizeof(int), 1, file) != 1 ||
+            fread(&p->category, sizeof(int), 1, file) != 1 ||
+            fread(&p->edge_count, sizeof(int), 1, file) != 1) {
+            perror("Error reading point metadata");
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+
+        // Allocate edges
+        p->edges = NULL;
+        if (p->edge_count > 0) {
+            p->edges = (int*)malloc(p->edge_count * sizeof(int));
+            if (!p->edges) {
+                perror("Memory allocation error for edges");
+                fclose(file);
+                exit(EXIT_FAILURE);
+            }
+
+            // Read edges
+            for (int e = 0; e < p->edge_count; e++) {
+                if (fread(&p->edges[e], sizeof(int), 1, file) != 1) {
+                    perror("Error reading point edges");
+                    fclose(file);
+                    exit(EXIT_FAILURE);
+                }
+            }
+        }
+
+        // Allocate coordinates
+        p->coordinates = (float*)malloc(graph->num_dimensions * sizeof(float));
+        if (!p->coordinates) {
+            perror("Memory allocation error for coordinates");
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+
+        // Read coordinates
+        for (int d = 0; d < graph->num_dimensions; d++) {
+            if (fread(&p->coordinates[d], sizeof(float), 1, file) != 1) {
+                perror("Error reading point coordinates");
+                fclose(file);
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+
+    // Read the medoid
+    if (fread(&graph->medoid, sizeof(int), 1, file) != 1) {
+        perror("Error reading medoid");
+        fclose(file);
+        exit(EXIT_FAILURE);
+    }
+
+    // Read filteredMedoids size
+    if (fread(&graph->filteredMedoids.size, sizeof(int), 1, file) != 1) {
+        perror("Error reading filteredMedoids size");
+        fclose(file);
+        exit(EXIT_FAILURE);
+    }
+
+    // Allocate memory for filteredMedoids
+    graph->filteredMedoids.metoids = NULL;
+    if (graph->filteredMedoids.size > 0) {
+        graph->filteredMedoids.metoids = (FilteredMedoid*)malloc(graph->filteredMedoids.size * sizeof(FilteredMedoid));
+        if (!graph->filteredMedoids.metoids) {
+            perror("Memory allocation error for filteredMedoids");
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+
+        // Read each filtered medoid (index, category)
+        for (int m = 0; m < graph->filteredMedoids.size; m++) {
+            if (fread(&graph->filteredMedoids.metoids[m].index, sizeof(int), 1, file) != 1 ||
+                fread(&graph->filteredMedoids.metoids[m].category, sizeof(int), 1, file) != 1) {
+                perror("Error reading filtered medoid");
+                fclose(file);
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+
+    fclose(file);
+    printf("Done.\n");
+    fflush(stdout);
+
+    return graph;
+}

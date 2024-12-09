@@ -219,7 +219,7 @@ void filtered_Robust_prune(Graph *graph, int p_index, int *V, int V_size, float 
 
     // remove from V the point p if it exists
     int position;
-    position = arrayContains(V, V_size, p_index);
+    position = arrayContainsForRobustRrune(V, V_size, p_index);
     if(position != -1) {
         V[position] = V[V_size - 1];
         V_size--;
@@ -266,7 +266,8 @@ void filtered_Robust_prune(Graph *graph, int p_index, int *V, int V_size, float 
             int F_p = graph->points[p_index].category;
             int F_p_star = p_star->category;
 
-            if ( F_p_prime == F_p && F_p_prime == F_p_star ){
+            if ((F_p_prime == F_p) && (F_p_prime != F_p_star)) {
+                // Not a subset → skip this p'
                 continue;
             }
 
@@ -569,6 +570,16 @@ int arrayContains(int *V, int V_size, int node) {
     }
     return 0;  // Node not found
 }
+int arrayContainsForRobustRrune(int *V, int V_size, int node) {
+    // Iterate through the array and check if the node is present
+    if(V_size == 0) return -1;
+    for (int i = 0; i < V_size; i++) {
+        if (V[i] == node) {
+            return i;  // Node found
+        }
+    }
+    return -1;  // Node not found
+}
 
 
 /**
@@ -722,7 +733,7 @@ void check_for_duplicates(int *array, int size) {
  * @param a The pruning parameter that influences the robustness of pruning.
  * @param R The maximum number of neighbors allowed for a point after pruning.
  */
-Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R) {
+Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filterInfo *filterinfo) {
 
     printf("Starting Vamana Indexing\n");
 
@@ -731,18 +742,20 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R) {
 
     // Calculating the medoid
     // ======= CHANGE THE PERCENTAGE OF THE SAMPLES HERE ======== //
-    int percentage = 20;
+    int percentage = 1;
     // ========================================================== //
 
     int num_sample_points = graph.num_points / percentage;
     int *sample_point_indexes = sample_points(graph, num_sample_points);
-    if(sample_point_indexes == NULL) {
-        printf("Error: sample_points returned NULL\n");
-        exit(1);
-    }
     int medoid_index = calculate_medoid(&graph, sample_point_indexes, num_sample_points);
-    printf("Medoid index: %d\n", medoid_index);
+    FilteredMethoidList* filteredMedoids = get_filtered_medoids(&graph, &num_sample_points, filterinfo);
+    graph.filteredMedoids = *filteredMedoids;
+    graph.medoid = medoid_index;
 
+//    printf("Medoid index: %d\n", medoid_index);
+//    for(int i=0; i<filteredMedoids->size; i++){
+//        printf("Medoid index: %d, category: %d\n", filteredMedoids->metoids[i].index, filteredMedoids->metoids[i].category);
+//    }
 
     // traverse the graph in a random way without repetitions
     bool *shuffled_point_indexes = (bool *)calloc(graph.num_points, sizeof(bool));
@@ -757,23 +770,41 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R) {
     for(i = 0; i < 128; i++) {
         starting_points[i] = rand() % graph.num_points;
     }
-    
+    i=0;
     while(i < graph.num_points) {
         s_index = rand() % graph.num_points;
         if (!shuffled_point_indexes[s_index]) {
+            /**
+             * Finds the medoid from the filtered medoids that is in the same category as the given datapoint.
+             * If the datapoint does not have a category, it returns the global medoid.
+             *
+             * @param filteredMedoids The list of filtered medoids.
+             * @param datapoint The datapoint to find the medoid for.
+             * @param medoid_index The global medoid index.
+             * @return The index of the medoid in the same category as the datapoint, or the global medoid index if no category.
+             */
             shuffled_point_indexes[s_index] = true;
             // printf("Indexing point %d\n", s_index);
 
             // Set as the starting index the node that is at the starting_points[category]
-            int *S_Fx_si = malloc(sizeof(int));
-            S_Fx_si[0] = starting_points[graph.points[s_index].category];
+           int F_Fx_si = find_medoid_for_point(filteredMedoids, &graph.points[s_index], medoid_index);
+//            int *S_Fx_si = malloc(sizeof(int));
+//            S_Fx_si[0] = graph->points[F_Fx_si];
             int sp_size = 1;
 
             // =============== GREEDY SEARCH ================ //
-            filtered_greedy_search(&graph, graph.points[s_index].coordinates, S_Fx_si, sp_size, &V, &V_size, &lamda, &lamda_size, L, graph.points[s_index].category);
+            filtered_greedy_search(&graph, graph.points[s_index].coordinates, &F_Fx_si, sp_size, &V, &V_size, &lamda, &lamda_size, L, graph.points[s_index].category);
 
+//            printf("Edges of point %d", s_index);
+//            for (int i = 0; i < graph.points[s_index].edge_count; i++) {
+//                printf("Edge %d : ", graph.points[s_index].edges[i] );
+//            }
             // =============== ROBUST PRUNE ================ //
             filtered_Robust_prune(&graph, s_index, V, V_size, a, R);
+
+//            for (int i = 0; i < graph.points[s_index].edge_count; i++) {
+//                printf("Edge %d : ", graph.points[s_index].edges[i] );
+//            }
 
             int *new_V = NULL;
             int new_V_size = 0;
@@ -818,6 +849,15 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R) {
     free(V);
     free(lamda);            
     free(shuffled_point_indexes);
+
+
+    for (int i = 0; i < graph.num_points; i++) {
+        printf("Point %d | Category: %d | Edges: ", graph.points[i].index, graph.points[i].category);
+        for (int j = 0; j < graph.points[i].edge_count; j++) {
+            printf("%d ", graph.points[i].edges[j]);
+        }
+        printf("\n");
+    }
     return graph;
 }
 
@@ -1150,7 +1190,7 @@ Graph vamana_indexing(DatasetInfo dataset, int L, float a, int R) {
                     // run robustPrune(p', Neighbors of p' U random point, a, R)
                     // create a new visited list that contains only the neighbors of p' and the random point
                     new_V = NULL;
-                    new_V = (int *)malloc((P_PRIME->edge_count + 1) * sizeof(int));
+                    new_V = (int *) malloc((P_PRIME->edge_count + 1) * sizeof(int));
                     new_V_size = 0;
                     for (int k = 0; k < P_PRIME->edge_count; k++) {
                         if (!arrayContains(new_V, new_V_size, P_PRIME->edges[k])) {
@@ -1183,6 +1223,129 @@ Graph vamana_indexing(DatasetInfo dataset, int L, float a, int R) {
     return graph;
 }
 
+FilteredMethoidList * get_filtered_medoids(Graph *graph, int *t, filterInfo *filterInfo)
+{
+    Point **groupedData = malloc(filterInfo->num_filters * sizeof(Point*));
+    for (int i = 0; i < filterInfo->num_filters; i++) {
+        groupedData[i] = malloc(filterInfo->filtersPoints[i].count * sizeof(Point));
+    }
+
+    int *current_position = (int *)calloc(filterInfo->num_filters, sizeof(int));
+
+    for (int i = 0; i < graph->num_points; i++) {
+        int category = graph->points[i].category;
+        for (int j = 0; j < filterInfo->num_filters; j++) {
+            if (filterInfo->filtersPoints[j].filter_index == category) {
+                groupedData[j][current_position[j]++] = graph->points[i];
+                break;
+            }
+        }
+    }
+
+    free(current_position);
+
+    // Print all the categories for each point in groupedData
+    for (int i = 0; i < filterInfo->num_filters; i++) {
+        printf("Filter %d:\n", filterInfo->filtersPoints[i].filter_index);
+        for (int j = 0; j < filterInfo->filtersPoints[i].count; j++) {
+            printf("Point %d: Category %d\n", groupedData[i][j].index, groupedData[i][j].category);
+        }
+    }
+
+    FilteredMethoidList* filteredMedoids = malloc(sizeof(FilteredMethoidList));
+
+    filteredMedoids->metoids = findClosestDataPoints(groupedData,filterInfo,filterInfo->num_filters,*t);
+    filteredMedoids->size=filterInfo->num_filters;
+
+
+    for (int i = 0; i < filterInfo->num_filters; i++) {
+        free(groupedData[i]);
+    }
+    free(groupedData);
+
+    return filteredMedoids;
+}
+
+void generate_random_permutation(int *perm, int n) {
+    for (int i = 0; i < n; i++) {
+        perm[i] = i;
+    }
+    for (int i = n - 1; i > 0; i--) {
+        int j = rand() % (i + 1);
+        int temp = perm[i];
+        perm[i] = perm[j];
+        perm[j] = temp;
+    }
+}
+
+
+
+FilteredMedoid* findClosestDataPoints(Point **groupedData, filterInfo *filterInfo, int numCategories, int t) {
+    FilteredMedoid*closestPoints = malloc(numCategories * sizeof(FilteredMedoid));
+    srand(time(NULL)); // Seed for random permutation
+
+    for (int cat = 0; cat < numCategories; cat++) {
+        int groupSize = filterInfo->filtersPoints[cat].count;
+        if (groupSize == 0) continue;
+
+        // If the category has only one element, directly assign its index as the medoid
+        if (groupSize == 1) {
+            closestPoints[cat].index = groupedData[cat][0].index;
+            closestPoints[cat].category = groupedData[cat][0].category;
+            continue;
+        }
+
+        // Adjust the permutation size to be the minimum of `groupSize` and `t`
+        int permSize = groupSize < t ? groupSize : t;
+
+        int *randomPermutation = malloc(permSize * sizeof(int));
+        generate_random_permutation(randomPermutation, permSize);
+
+        double minDistance = DBL_MAX;
+        int closestIndex = -1;
+
+        for (int i = 0; i < permSize; i++) {
+            int permIndex = randomPermutation[i];
+            float *permVector = groupedData[cat][permIndex].coordinates;
+
+            double totalDistance = 0.0;
+            for (int j = 0; j < groupSize; j++) {
+                if (j == permIndex) continue;
+                float *currentVector = groupedData[cat][j].coordinates;
+                totalDistance += squared_euclidean_distance(permVector, currentVector, 100);
+            }
+
+            if (totalDistance < minDistance) {
+                minDistance = totalDistance;
+                closestIndex = permIndex;
+            }
+        }
+
+        // Store the index and category of the closest DataPoint for this category
+        closestPoints[cat].index = groupedData[cat][closestIndex].index;
+        closestPoints[cat].category = groupedData[cat][closestIndex].category;
+        if (randomPermutation != NULL) {
+        free(randomPermutation);
+        }
+    }
+
+    return closestPoints;
+}
+
+int find_medoid_for_point(FilteredMethoidList* filteredMedoids, Point* datapoint, int medoid_index)
+{
+    if (datapoint->category == -1) {
+        return medoid_index;
+    }
+
+    for (int i = 0; i < filteredMedoids->size; i++) {
+        if (filteredMedoids->metoids[i].category == datapoint->category) {
+            return filteredMedoids->metoids[i].index;
+        }
+    }
+
+    return medoid_index;
+}
 
 /**
  * Stitched Vamana Indexing

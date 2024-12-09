@@ -48,6 +48,8 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 recall: $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/recall.c 
 	$(CC) -o recall $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/recall.c $(CFLAGS)
 
+recallFilteredVamana: $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/recallFilteredVamana.c
+	$(CC) -o recallFilteredVamana $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/recallFilteredVamana.c $(CFLAGS)
 
 stitched: $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/stitchedVamana.c
 	$(CC) -o stitchedVamana $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/stitchedVamana.c $(CFLAGS)

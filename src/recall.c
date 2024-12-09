@@ -129,11 +129,9 @@ int main(int argc, char *argv[]) {
             for(int j = 0; j < 100; j++) {
                 if(groundTruthSet[i][j] != -1) {
                     ground_truth_count[i]++;
-                }       
-                
+                }
             }
         }
-            
     }
 
     int *V = NULL;
