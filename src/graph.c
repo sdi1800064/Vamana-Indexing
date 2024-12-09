@@ -736,10 +736,15 @@ Graph* filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filt
 
     int num_sample_points = graph.num_points / percentage;
     int *sample_point_indexes = sample_points(graph, num_sample_points);
-    int medoid_index = calculate_medoid(&graph, sample_point_indexes, graph.num_points);
+    int medoid_index = calculate_medoid(&graph, sample_point_indexes, num_sample_points);
     FilteredMethoidList* filteredMedoids = get_filtered_medoids(&graph, &num_sample_points, filterinfo);
-    printf("Medoid index: %d\n", medoid_index);
+    graph.filteredMedoids = *filteredMedoids;
+    graph.medoid = medoid_index;
 
+    printf("Medoid index: %d\n", medoid_index);
+    for(int i=0; i<filteredMedoids->size; i++){
+        printf("Medoid index: %d, category: %d\n", filteredMedoids->metoids[i].index, filteredMedoids->metoids[i].category);
+    }
 
     // traverse the graph in a random way without repetitions
     bool *shuffled_point_indexes = (bool *)calloc(graph.num_points, sizeof(bool));
@@ -754,7 +759,7 @@ Graph* filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filt
     for(i = 0; i < 128; i++) {
         starting_points[i] = rand() % graph.num_points;
     }
-    
+    i=0;
     while(i < graph.num_points) {
         s_index = rand() % graph.num_points;
         if (!shuffled_point_indexes[s_index]) {
@@ -1211,6 +1216,13 @@ FilteredMethoidList * get_filtered_medoids(Graph *graph, int *t, filterInfo *fil
 
     free(current_position);
 
+    // Print all the categories for each point in groupedData
+    for (int i = 0; i < filterInfo->num_filters; i++) {
+        printf("Filter %d:\n", filterInfo->filtersPoints[i].filter_index);
+        for (int j = 0; j < filterInfo->filtersPoints[i].count; j++) {
+            printf("Point %d: Category %d\n", groupedData[i][j].index, groupedData[i][j].category);
+        }
+    }
 
     FilteredMethoidList* filteredMedoids = malloc(sizeof(FilteredMethoidList));
 
@@ -1251,7 +1263,7 @@ FilteredMedoid* findClosestDataPoints(Point **groupedData, filterInfo *filterInf
         // If the category has only one element, directly assign its index as the medoid
         if (groupSize == 1) {
             closestPoints[cat].index = groupedData[cat][0].index;
-            closestPoints[cat].category = cat;
+            closestPoints[cat].category = groupedData[cat][0].category;
             continue;
         }
 
@@ -1259,7 +1271,7 @@ FilteredMedoid* findClosestDataPoints(Point **groupedData, filterInfo *filterInf
         int permSize = groupSize < t ? groupSize : t;
 
         int *randomPermutation = malloc(permSize * sizeof(int));
-        generate_random_permutation(randomPermutation, groupSize);
+        generate_random_permutation(randomPermutation, permSize);
 
         double minDistance = DBL_MAX;
         int closestIndex = -1;
@@ -1283,8 +1295,10 @@ FilteredMedoid* findClosestDataPoints(Point **groupedData, filterInfo *filterInf
 
         // Store the index and category of the closest DataPoint for this category
         closestPoints[cat].index = groupedData[cat][closestIndex].index;
-        closestPoints[cat].category = cat;
+        closestPoints[cat].category = groupedData[cat][closestIndex].category;
+        if (randomPermutation != NULL) {
         free(randomPermutation);
+        }
     }
 
     return closestPoints;

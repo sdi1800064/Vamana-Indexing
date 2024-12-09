@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     char *graph_file_name = NULL;
     char *query_file_name = NULL;
     char *groundtruth_file_name = NULL;
-    int k = -1;
+    int k = 60;
     int L = -1;
     int R = -1;
     int a = -1;
