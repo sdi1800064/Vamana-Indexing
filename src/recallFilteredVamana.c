@@ -210,9 +210,9 @@ int main(int argc, char *argv[]) {
             int lamda_size = 0;
             int V_size = 0;
             int filteredmedoid;
-            for(int i =0; i<=filteredVamanaGraph.filteredMedoids.size; i++){
-                if(filteredVamanaGraph.filteredMedoids.metoids[i].category == query_filter){
-                    filteredmedoid = i;
+            for(int a =0; a<=filteredVamanaGraph.filteredMedoids.size; a++){
+                if(filteredVamanaGraph.filteredMedoids.metoids[a].category == querySet->queries[i].v){
+                    filteredmedoid = filteredVamanaGraph.filteredMedoids.metoids[a].index;
                     break;
                 }
             }
