@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     char *graph_file_name = NULL;
     char *query_file_name = NULL;
     char *groundtruth_file_name = NULL;
-    int k = 100;
+    int k = -1;
     int L = -1;
     int R = -1;
     float a = -1.0;
@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
                 }
             }
             // printf("Query %d: Found %d / %d\n", i, count, k_minimum);
-            filtered_total_relevant += ground_truth_count[i];
+            filtered_total_relevant += ground_truth_count[i]<k ? ground_truth_count[i] : k;
             prediction_count += k_a;
             recall += count / 100;
             total_count += count;
