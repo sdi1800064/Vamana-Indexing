@@ -3,6 +3,12 @@
 To create the main executable run 
 ```make```
 
+To create the vamanaFilteringExe executable run~~~~
+``` make recallFilteredVamana ```
+
+To install the check library run
+```sudo apt-get install check```
+
 To create the test executable run
 ```make test```
 
@@ -11,6 +17,11 @@ In order to run the main executable
 
 In order to run the test executable 
 ```./test```
+
+In order to run the main executable for the vamanafiltered dataset run
+```./recallFilteredVamana -b dummy-data.bin -q dummy-queries.bin --graph graphVamanaFiltered.txt -g groundtruth.ivecs -R 30 -a 1.2 -L 60 -k 100 command line```
+
+
 
 you can use the following flags for the main:
 
