@@ -30,16 +30,17 @@ int arrayContains(int *V, int V_size, int node);
 void add_to_dynamic_array(int **array, int *size, int element);
 void printArray(int *array, int array_size);
 void check_for_duplicates(int *array, int size);
-void sort_array_based_on_dataset(DatasetInfo *dataset, int *array, int array_size, float *Xq);
+int sort_array_based_on_dataset(DatasetInfo *dataset, int *array, int array_size, float *Xq);
 
 
 // Functions for the medoid calculation
 int calculate_medoid(Graph *graph, int *sample_point_indexes, int num_sample_points);
 int* sample_points(Graph graph, int num_sample_points);
 
-void filtered_Robust_prune(Graph *graph, int p_index, int *V, int V_size, float a, int R);
+int filtered_Robust_prune(Graph *graph, int p_index, int *V, int V_size, float a, int R);
 void filtered_greedy_search(Graph *graph, float *Xq, int* start_index, int start_index_size, int **V, int *V_size, int **Lamda, int *Lamda_size, int L, int query_filter);
 
+Graph create_random_graph(DatasetInfo dataset, int base_num_dimensions, int max_edges);
 void robustPrune(Graph *graph, int p_index, int *V, int V_size, float a, int R);
 void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_size, int **Lamda, int *Lamda_size, int L);
 Graph vamana_indexing(DatasetInfo dataset, int L, float a, int R);

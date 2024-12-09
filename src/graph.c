@@ -56,8 +56,6 @@ Graph initialise_graph(DatasetInfo* dataset, int max_edges) {
         graph.points[i].edges = malloc(max_edges * sizeof(int));
         graph.points[i].edge_count = 0;
     }
-    // free_dataset(dataset);
-    printf("Graph initialized!\n");
     return graph;
 }
 
@@ -206,7 +204,11 @@ int edgeExists(Point *point, int toIndex) {
  * @param a The pruning parameter
  * @param R The maximum number of neighbors of p
  */
-void filtered_Robust_prune(Graph *graph, int p_index, int *V, int V_size, float a, int R) {
+int filtered_Robust_prune(Graph *graph, int p_index, int *V, int V_size, float a, int R) {
+
+    if(V_size == 0) {
+        return 0;
+    }
 
     // add to V all the neighbors of p and remove p from v if it exists
     for (int i = 0; i < graph->points[p_index].edge_count; i++) {
@@ -281,7 +283,7 @@ void filtered_Robust_prune(Graph *graph, int p_index, int *V, int V_size, float 
         }
 
     }
-
+    return 1;
 }
 
 
@@ -359,7 +361,10 @@ void sort_array(Graph *graph, int *array, int array_size, float *Xq) {
 
 }
 
-void sort_array_based_on_dataset(DatasetInfo *dataset, int *array, int array_size, float *Xq) {
+int sort_array_based_on_dataset(DatasetInfo *dataset, int *array, int array_size, float *Xq) {
+    if(dataset->datapoints == 0 || dataset == NULL) {
+        return 0;
+    }
     // Create an array to hold distances
     float *distances = (float *)malloc(array_size * sizeof(float));
     if (distances == NULL) {
@@ -392,7 +397,7 @@ void sort_array_based_on_dataset(DatasetInfo *dataset, int *array, int array_siz
 
     // Free the temporary distances array
     free(distances);
-
+    return 1;
 }
 
 
