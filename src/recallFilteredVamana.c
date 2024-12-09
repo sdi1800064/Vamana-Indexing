@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
 //             MUST INCLUDE THE DATASET
 
             for( int a = 0; a < k; a++) {
-                    add_to_dynamic_array(&arrayOfPredictedIndexes, &sumOfAllClosest,lamda[i]);
+                    add_to_dynamic_array(&arrayOfPredictedIndexes, &sumOfAllClosest,lamda[a]);
             }
 //            sort_array_based_on_dataset(dataSet, arrayOfPredictedIndexes, sumOfAllClosest, querySet->queries[i].query_vector);
             for(int j = 0; j < k; j++) {
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
             filtered_greedy_search(&filteredVamanaGraph, querySet->queries[i].query_vector, &filteredmedoid, 1, &V,&V_size,&lamda,&lamda_size,k, querySet->queries[i].v);
 
             for( int a = 0; a < lamda_size; a++) {
-                add_to_dynamic_array(&arrayOfPredictedIndexes, &sumOfAllClosest,lamda[i]);
+                add_to_dynamic_array(&arrayOfPredictedIndexes, &sumOfAllClosest,lamda[a]);
             }
 //            sort_array_based_on_dataset(dataSet, arrayOfPredictedIndexes, sumOfAllClosest, querySet->queries[i].query_vector);
 
