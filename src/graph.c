@@ -219,7 +219,7 @@ void filtered_Robust_prune(Graph *graph, int p_index, int *V, int V_size, float 
 
     // remove from V the point p if it exists
     int position;
-    position = arrayContains(V, V_size, p_index);
+    position = arrayContainsForRobustRrune(V, V_size, p_index);
     if(position != -1) {
         V[position] = V[V_size - 1];
         V_size--;
@@ -266,7 +266,8 @@ void filtered_Robust_prune(Graph *graph, int p_index, int *V, int V_size, float 
             int F_p = graph->points[p_index].category;
             int F_p_star = p_star->category;
 
-            if ( F_p_prime == F_p && F_p_prime == F_p_star ){
+            if ((F_p_prime == F_p) && (F_p_prime != F_p_star)) {
+                // Not a subset → skip this p'
                 continue;
             }
 
@@ -569,6 +570,16 @@ int arrayContains(int *V, int V_size, int node) {
     }
     return 0;  // Node not found
 }
+int arrayContainsForRobustRrune(int *V, int V_size, int node) {
+    // Iterate through the array and check if the node is present
+    if(V_size == 0) return -1;
+    for (int i = 0; i < V_size; i++) {
+        if (V[i] == node) {
+            return i;  // Node found
+        }
+    }
+    return -1;  // Node not found
+}
 
 
 /**
@@ -722,7 +733,7 @@ void check_for_duplicates(int *array, int size) {
  * @param a The pruning parameter that influences the robustness of pruning.
  * @param R The maximum number of neighbors allowed for a point after pruning.
  */
-Graph* filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filterInfo *filterinfo) {
+Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filterInfo *filterinfo) {
 
     printf("Starting Vamana Indexing\n");
 
@@ -731,7 +742,7 @@ Graph* filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filt
 
     // Calculating the medoid
     // ======= CHANGE THE PERCENTAGE OF THE SAMPLES HERE ======== //
-    int percentage = 20;
+    int percentage = 1;
     // ========================================================== //
 
     int num_sample_points = graph.num_points / percentage;
@@ -784,8 +795,16 @@ Graph* filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filt
             // =============== GREEDY SEARCH ================ //
             filtered_greedy_search(&graph, graph.points[s_index].coordinates, &F_Fx_si, sp_size, &V, &V_size, &lamda, &lamda_size, L, graph.points[s_index].category);
 
+//            printf("Edges of point %d", s_index);
+//            for (int i = 0; i < graph.points[s_index].edge_count; i++) {
+//                printf("Edge %d : ", graph.points[s_index].edges[i] );
+//            }
             // =============== ROBUST PRUNE ================ //
             filtered_Robust_prune(&graph, s_index, V, V_size, a, R);
+
+//            for (int i = 0; i < graph.points[s_index].edge_count; i++) {
+//                printf("Edge %d : ", graph.points[s_index].edges[i] );
+//            }
 
             int *new_V = NULL;
             int new_V_size = 0;
@@ -830,7 +849,16 @@ Graph* filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filt
     free(V);
     free(lamda);            
     free(shuffled_point_indexes);
-    return &graph;
+
+
+    for (int i = 0; i < graph.num_points; i++) {
+        printf("Point %d | Category: %d | Edges: ", graph.points[i].index, graph.points[i].category);
+        for (int j = 0; j < graph.points[i].edge_count; j++) {
+            printf("%d ", graph.points[i].edges[j]);
+        }
+        printf("\n");
+    }
+    return graph;
 }
 
 

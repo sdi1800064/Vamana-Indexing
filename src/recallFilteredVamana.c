@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     char *graph_file_name = NULL;
     char *query_file_name = NULL;
     char *groundtruth_file_name = NULL;
-    int k = 60;
+    int k = 100;
     int L = -1;
     int R = -1;
     int a = -1;
@@ -65,11 +65,11 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if(L < k){
-        fprintf(stderr, "Error: L must be greater than k.\n");
-        fprintf(stderr, "Usage: %s -b base_file_name --graph graph_file_name -q query_file_name -g groundtruth_file_name -k (int k) -L (int L)\n", argv[0]);
-        return 1;
-    }
+//    if(L < k){
+//        fprintf(stderr, "Error: L must be greater than k.\n");
+//        fprintf(stderr, "Usage: %s -b base_file_name --graph graph_file_name -q query_file_name -g groundtruth_file_name -k (int k) -L (int L)\n", argv[0]);
+//        return 1;
+//    }
 
     printf("k = %d || L = %d\n", k, L);
 
@@ -117,14 +117,15 @@ int main(int argc, char *argv[]) {
 
     //Check if the file exists,if it does not create it and write the data else read the data
 
-    Graph* filteredVamanaGraph;
+    Graph filteredVamanaGraph;
     int stitchedGraphs_size;
     // Check if the file exists
     if (access(graph_file_name, F_OK) != -1) {
         // File exists, read the data
-        filteredVamanaGraph = readGraphs(graph_file_name, &stitchedGraphs_size);
+        filteredVamanaGraph = *readGraphs(graph_file_name, &stitchedGraphs_size);
     } else {
          filteredVamanaGraph = filtered_vamana_indexing(dataSet, L,a,R,&(dataSet->filterInfo));
+
     }
 
 
@@ -170,14 +171,14 @@ int main(int argc, char *argv[]) {
             int *lamda = NULL;
             int lamda_size = 0;
             int V_size = 0;
-            int startIndex = filteredVamanaGraph->medoid;
-            filtered_greedy_search(filteredVamanaGraph, querySet->queries[i].query_vector, &startIndex, k_closest_size, &V,&V_size,&lamda,&lamda_size,L, querySet->queries[i].v);
+            int startIndex = filteredVamanaGraph.medoid;
+            filtered_greedy_search(&filteredVamanaGraph, querySet->queries[i].query_vector, &startIndex, 1, &V,&V_size,&lamda,&lamda_size,k, querySet->queries[i].v);
 //             MUST INCLUDE THE DATASET
 
-            for( int k = 0; k < k_closest_size; k++) {
-                    add_to_dynamic_array(&arrayOfPredictedIndexes, &sumOfAllClosest,lamda[k]);
+            for( int a = 0; a < k; a++) {
+                    add_to_dynamic_array(&arrayOfPredictedIndexes, &sumOfAllClosest,lamda[i]);
             }
-            sort_array_based_on_dataset(dataSet, arrayOfPredictedIndexes, sumOfAllClosest, querySet->queries[i].query_vector);
+//            sort_array_based_on_dataset(dataSet, arrayOfPredictedIndexes, sumOfAllClosest, querySet->queries[i].query_vector);
             for(int j = 0; j < k; j++) {
                 int predicted_index = arrayOfPredictedIndexes[j];
                 for(int l = 0; l < 100; l++) {
@@ -209,22 +210,22 @@ int main(int argc, char *argv[]) {
             int lamda_size = 0;
             int V_size = 0;
             int filteredmedoid;
-            for(int i =0; i<=filteredVamanaGraph->filteredMedoids.size; i++){
-                if(filteredVamanaGraph->filteredMedoids.metoids[i].category == query_filter){
+            for(int i =0; i<=filteredVamanaGraph.filteredMedoids.size; i++){
+                if(filteredVamanaGraph.filteredMedoids.metoids[i].category == query_filter){
                     filteredmedoid = i;
                     break;
                 }
             }
-            filtered_greedy_search(filteredVamanaGraph, querySet->queries[i].query_vector, &filteredmedoid, k_closest_size, &V,&V_size,&lamda,&lamda_size,L, querySet->queries[i].v);
+            filtered_greedy_search(&filteredVamanaGraph, querySet->queries[i].query_vector, &filteredmedoid, 1, &V,&V_size,&lamda,&lamda_size,k, querySet->queries[i].v);
 
-            for( int k = 0; k < lamda_size; k++) {
-                add_to_dynamic_array(&arrayOfPredictedIndexes, &sumOfAllClosest,lamda[k]);
+            for( int a = 0; a < lamda_size; a++) {
+                add_to_dynamic_array(&arrayOfPredictedIndexes, &sumOfAllClosest,lamda[i]);
             }
-            sort_array_based_on_dataset(dataSet, arrayOfPredictedIndexes, sumOfAllClosest, querySet->queries[i].query_vector);
+//            sort_array_based_on_dataset(dataSet, arrayOfPredictedIndexes, sumOfAllClosest, querySet->queries[i].query_vector);
 
 
             int k_a = lamda_size;
-            if(lamda_size < L) {
+            if(lamda_size < k) {
                 k_a = lamda_size;
             }
 
@@ -248,7 +249,7 @@ int main(int argc, char *argv[]) {
             V = NULL;
             V_size = 0;
             k_closest_size = 0;
-            }
+        }
     }
     printf("Done.\n");
     fflush(stdout);

@@ -31,6 +31,7 @@ void add_to_dynamic_array(int **array, int *size, int element);
 void printArray(int *array, int array_size);
 void check_for_duplicates(int *array, int size);
 void sort_array_based_on_dataset(DatasetInfo *dataset, int *array, int array_size, float *Xq);
+int arrayContainsForRobustRrune(int *V, int V_size, int node);
 
 
 // Functions for the medoid calculation
@@ -58,6 +59,6 @@ FilteredMedoid * findClosestDataPoints(Point **groupedData, filterInfo *groupSiz
 void check_for_duplicates(int *array, int size);
 void generate_random_permutation(int *perm, int n);
 
-Graph* filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filterInfo *filterinfo);
+Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filterInfo *filterinfo);
 
 #endif
