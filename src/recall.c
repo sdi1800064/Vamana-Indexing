@@ -23,6 +23,8 @@ int main(int argc, char *argv[]) {
     char *groundtruth_file_name = NULL;
     int k = -1;
     int L = -1;
+    float a = -1.0;
+    int R = -1;
 
     // Iterate through command line arguments
     for (int i = 1; i < argc; i++) {
@@ -44,23 +46,28 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "-L") == 0 && i + 1 < argc) {
             L = atoi(argv[i + 1]);
             i++;
+        } else if (strcmp(argv[i], "-a") == 0 && i + 1 < argc) {
+            a = atof(argv[i + 1]);
+            i++;
+        } else if (strcmp(argv[i], "-R") == 0 && i + 1 < argc) {
+            R = atoi(argv[i + 1]);
+            i++;
         }
     }
 
     // Check if all required arguments are provided
-    if (!base_file_name || !graph_file_name || !query_file_name || !groundtruth_file_name || k == -1 || L == -1) {
+    if (!base_file_name || !graph_file_name || !query_file_name || !groundtruth_file_name || k == -1 || L == -1 || a == -1.0 || R == -1) {
         fprintf(stderr, "Error: Missing required arguments.\n");
-        fprintf(stderr, "Usage: %s -b base_file_name --graph graph_file_name -q query_file_name -g groundtruth_file_name -k (int k) -L (int L)\n", argv[0]);
+        fprintf(stderr, "Usage: %s -b base_file_name --graph graph_file_name -q query_file_name -g groundtruth_file_name -k (int k) -L (int L) -a (float a) -R (int R)\n", argv[0]);
         return 1;
     }
 
     if(L < k){
         fprintf(stderr, "Error: L must be greater than k.\n");
-        fprintf(stderr, "Usage: %s -b base_file_name --graph graph_file_name -q query_file_name -g groundtruth_file_name -k (int k) -L (int L)\n", argv[0]);
         return 1;
     }
 
-    printf("k = %d || L = %d\n", k, L);
+    printf("k = %d || L = %d || a = %f || R = %d\n", k, L, a, R);
 
     // ===================== CREATE OUTPUT FILE IF NEEDED ================== //
     // Create an output file
@@ -107,7 +114,16 @@ int main(int argc, char *argv[]) {
     // Initialise the graphs
     Graph* stitchedGraphs;
     int stitchedGraphs_size;
-    stitchedGraphs = readGraphs(graph_file_name, &stitchedGraphs_size);
+    
+    FILE *file_check = fopen(graph_file_name, "r");
+    if(file_check == NULL) {
+        int stitchedGraphs_size = dataSet->filterInfo.num_filters;
+        int Rsmall = R/2;
+        Graph* stitchedGraphs = (Graph *)malloc(stitchedGraphs_size * sizeof(Graph));
+        stitchedGraphs = stitched_vamana_indexing(dataSet, L, a, Rsmall, R);
+        writeGraphs(stitchedGraphs, stitchedGraphs_size, graph_file_name);
+    }
+    stitchedGraphs = readGraphs(graph_file_name, &stitchedGraphs_size);    
 
 
     // ============ RECALL AFTER VAMANA INDEXING ============= //
@@ -145,7 +161,7 @@ int main(int argc, char *argv[]) {
     for( int i = 0; i < querySet->num_queries; i++) {
         int query_type = querySet->queries[i].query_type;
         if(query_type == 0) {
-            // printf("Query %d of type %d\n", i, query_type);        
+            // printf("Query %d of type %d\n", i, query_type);    
             int sumOfAllClosest = 0;
             int* arrayOfPredictedIndexes = (int*)malloc(sizeof(int));
             for(int j = 0; j < stitchedGraphs_size; j++) {
@@ -185,7 +201,6 @@ int main(int argc, char *argv[]) {
         
         } else if(query_type == 1 && querySet->queries[i].v != 144) {
             // printf("Query %d of type %d and filter %d\n", i, query_type, querySet->queries[i].v);
-
             int query_filter = querySet->queries[i].v;
             // printf("Filter_graph: %d with first index -> %d | filter %d\n", query_filter, stitchedGraphs[query_filter].points[0].index, stitchedGraphs[query_filter].points[0].category);
             int random_graph_index = rand() % stitchedGraphs[query_filter].num_points;
