@@ -138,7 +138,10 @@ int main(int argc, char *argv[]) {
     float recall = 0.0;
 
     int total_count = 0;
+    int filtered_total_count = 0;
+    int filtered_prediction_count = 0;
     int count = 0;
+    int filtered_total_relevant = 0;
     int prediction_count = 0;
     int ground_truth_count[querySet->num_queries];
 
@@ -242,9 +245,12 @@ int main(int argc, char *argv[]) {
                 }
             }
             // printf("Query %d: Found %d / %d\n", i, count, k_minimum);
+            filtered_total_relevant += ground_truth_count[i];
             prediction_count += k_a;
             recall += count / 100;
             total_count += count;
+            filtered_total_count += count;
+            filtered_prediction_count += k_a;
             count = 0;
             V = NULL;
             V_size = 0;
@@ -259,7 +265,13 @@ int main(int argc, char *argv[]) {
     free(V);
     recall = (float) total_count / prediction_count;
     printf("Found %d / %d\n", total_count, prediction_count);
+    printf("Found only for filtered %d / %d\n", filtered_total_count, filtered_prediction_count);
+    float filtered_recall = 0.0f;
+    if (filtered_total_relevant > 0) {
+        filtered_recall = (float) filtered_total_count / (float) filtered_total_relevant;
+    }
     printf("Recall: %.3f%%\n", recall*100);
+    printf("Filtered Recall: %.3f%%\n", filtered_recall*100);
 
     // ============== FREE MEMORY ================= //
 
