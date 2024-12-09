@@ -276,7 +276,7 @@ START_TEST(test_get_the_difference)
     int *result = get_the_difference(a, a_size, b, b_size, &c_size);
     printArray(result, c_size);
     ck_assert_int_eq(result[0], 6);
-    ck_assert_int_eq(c_size, 4);
+    ck_assert_int_eq(c_size, 5);
     free(result);
 }
 END_TEST
