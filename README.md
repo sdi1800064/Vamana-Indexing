@@ -49,6 +49,7 @@ You need to use the following flags:
 The arguments a and R are mandatory in order the graph file doesnt exist. In this case the program will create the graph(s) needed and save the graph(s) on a file with this name ```<graph_R<r>.bin```
 
 ### Graph Creation
+#### Stitched Graphs
 To create the Sticthed Graphs you can either use the ```recallStitchedVamana``` executable or the ```stitchedVamana``` one.
 
 To run the ```stitchedVamana``` you need to use the following arguments:
@@ -63,6 +64,8 @@ To run the ```stitchedVamana``` you need to use the following arguments:
 
 In this case the graph will be stored in a file named __stitchedGraph_R<r>.bin__ 
 
+#### Filtered Graph
+The Filtered graph can be created by running the ```recallFilteredVamana``` executable.
 
 
 # Cleaning
