@@ -752,10 +752,10 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filte
     graph.filteredMedoids = *filteredMedoids;
     graph.medoid = medoid_index;
 
-    printf("Medoid index: %d\n", medoid_index);
-    for(int i=0; i<filteredMedoids->size; i++){
-        printf("Medoid index: %d, category: %d\n", filteredMedoids->metoids[i].index, filteredMedoids->metoids[i].category);
-    }
+//    printf("Medoid index: %d\n", medoid_index);
+//    for(int i=0; i<filteredMedoids->size; i++){
+//        printf("Medoid index: %d, category: %d\n", filteredMedoids->metoids[i].index, filteredMedoids->metoids[i].category);
+//    }
 
     // traverse the graph in a random way without repetitions
     bool *shuffled_point_indexes = (bool *)calloc(graph.num_points, sizeof(bool));

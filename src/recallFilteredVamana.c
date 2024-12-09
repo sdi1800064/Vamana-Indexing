@@ -122,10 +122,10 @@ int main(int argc, char *argv[]) {
     // Check if the file exists
     if (access(graph_file_name, F_OK) != -1) {
         // File exists, read the data
-        filteredVamanaGraph = *readGraphs(graph_file_name, &stitchedGraphs_size);
+        filteredVamanaGraph = *readGraph(graph_file_name);
     } else {
          filteredVamanaGraph = filtered_vamana_indexing(dataSet, L,a,R,&(dataSet->filterInfo));
-
+        writeVamanaGraph(&filteredVamanaGraph, graph_file_name);
     }
 
 

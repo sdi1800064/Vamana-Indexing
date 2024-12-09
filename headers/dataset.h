@@ -23,6 +23,8 @@ int** readGroundTruth(char* filename, int num_queries);
 
 void writeGraphs(Graph* graph, int num_of_graphs, char* filename);
 Graph* readGraphs(char* filename, int* num_of_graphs);
+void writeVamanaGraph(Graph* graph, const char* filename);
+Graph* readGraph(const char* filename);
 
 
 #endif // FVEC_H
