@@ -271,7 +271,6 @@ START_TEST(test_get_the_difference)
     int a_size = 3;
     int b_size = 3;
     int c_size = 0;
-    int expected[] = {3};
 
     int *result = get_the_difference(a, a_size, b, b_size, &c_size);
     printArray(result, c_size);
@@ -298,7 +297,6 @@ START_TEST(test_squared_euclidean_distance)
     float a[] = {1.0, 2.0, 3.0};
     float b[] = {4.0, 5.0, 6.0};
     float expected = 27.0;
-    double result = squared_euclidean_distance(a, b, 3);
 
     ck_assert_float_eq(squared_euclidean_distance(a, b, 3), expected);
 }

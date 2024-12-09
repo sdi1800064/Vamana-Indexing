@@ -22,7 +22,7 @@ TEST_TARGET = run_tests
 EXEC = exclude
 
 # # List of files to exclude
-EXCLUDE_FILES := $(SRC_DIR)/groundtruth.c $(SRC_DIR)/stitchedVamana.c $(SRC_DIR)/recall.c
+EXCLUDE_FILES := $(SRC_DIR)/groundtruth.c $(SRC_DIR)/stitchedVamana.c $(SRC_DIR)/recallStitchedVamana.c $(SRC_DIR)/recallFilteredVamana.c
 
 # # Filter out the excluded files
 SRC_FILES := $(filter-out $(EXCLUDE_FILES), $(SRC_FILES))
@@ -53,10 +53,10 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(OBJ_DIR) # Create obj directory if it doesn't exist
 	$(CC) $(CFLAGS) -c $< -o $@
 
-recall: $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/recall.c 
-	$(CC) -o recall $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/recall.c $(CFLAGS)
+recalls: $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/recallStitchedVamana.c 
+	$(CC) -o recallSticthedVamana $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/recallStitchedVamana.c $(CFLAGS)
 
-recallFilteredVamana: $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/recallFilteredVamana.c
+recallf: $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/recallFilteredVamana.c
 	$(CC) -o recallFilteredVamana $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/recallFilteredVamana.c $(CFLAGS)
 
 stitched: $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/stitchedVamana.c
@@ -82,7 +82,7 @@ groundtruth: $(SRC_DIR)/groundtruth.c $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c
 
 # Clean rule to remove object files and executables
 clean:
-	rm -rf $(OBJ_DIR)/*.o recall smth groundtruth output.txt stitchedVamana run_tests
+	rm -rf $(OBJ_DIR)/*.o recallSticthedVamana recallFilteredVamana smth groundtruth output.txt stitchedVamana run_tests
 
 # Phony targets
 .PHONY: all debug clean test

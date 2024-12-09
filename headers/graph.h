@@ -45,7 +45,7 @@ Graph create_random_graph(DatasetInfo dataset, int base_num_dimensions, int max_
 void robustPrune(Graph *graph, int p_index, int *V, int V_size, float a, int R);
 void greedy_search(Graph *graph, float *Xq, int start_index, int **V, int *V_size, int **Lamda, int *Lamda_size, int L);
 Graph vamana_indexing(DatasetInfo dataset, int L, float a, int R);
-Graph* stitched_vamana_indexing(DatasetInfo* dataset, int L_small, float a, int R_small, int R_stitched);
+Graph* stitched_vamana_indexing(DatasetInfo* dataset, int L_small, float a, int R_small);
 int calculate_medoid(Graph *graph, int *sample_point_indexes, int num_sample_points);
 FilteredMethoidList * get_filtered_medoids(Graph *graph, int *t, filterInfo *filterInfo);
 int find_medoid_for_point(FilteredMethoidList* filteredMedoids, Point* point, int medoid_index);

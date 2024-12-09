@@ -57,12 +57,15 @@ int main(int argc, char *argv[]) {
     Graph* graph = (Graph *)malloc(num_of_graphs * sizeof(Graph));
 
     time_t start_vamana = time(NULL);
-    graph = stitched_vamana_indexing(dataSet, L, a, Rsmall, R);
+    graph = stitched_vamana_indexing(dataSet, L, a, Rsmall);
     time_t end_vamana = time(NULL);
 
     double time_vamana = difftime(end_vamana, start_vamana);
     
-    char* graph_file_name = "StitchedVamanaGraphs.bin";
+    char* graph_file_name = "stitchedGraph";
+    char new_groundtruth_file_name[100];
+    sprintf(new_groundtruth_file_name, "%s%s%d%s", graph_file_name, "_R", R, ".bin");
+
     writeGraphs(graph, num_of_graphs, graph_file_name);
     for(int i = 0; i < num_of_graphs; i++){
         free_graph(graph[i]);

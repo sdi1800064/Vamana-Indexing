@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     int k = 100;
     int L = -1;
     int R = -1;
-    int a = -1;
+    float a = -1.0;
 
     // Iterate through command line arguments
     for (int i = 1; i < argc; i++) {
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
             i++;
         }
         else if (strcmp(argv[i], "-a") == 0 && i + 1 < argc) {
-            a = atoi(argv[i + 1]);
+            a = atof(argv[i + 1]);
             i++;
         }
         else if (strcmp(argv[i], "-L") == 0 && i + 1 < argc) {
@@ -59,19 +59,20 @@ int main(int argc, char *argv[]) {
     }
 
     // Check if all required arguments are provided
-    if (!base_file_name || !graph_file_name || !query_file_name || !groundtruth_file_name || k == -1 || L == -1) {
+    if (!base_file_name || !graph_file_name || !query_file_name || !groundtruth_file_name || k == -1 || L == -1 || a == -1.0 || R == -1) {
         fprintf(stderr, "Error: Missing required arguments.\n");
         fprintf(stderr, "Usage: %s -b base_file_name --graph graph_file_name -q query_file_name -g groundtruth_file_name -k (int k) -L (int L)\n", argv[0]);
         return 1;
     }
+    
+    
+    if(L < k){
+        fprintf(stderr, "Error: L must be greater than k.\n");
+        fprintf(stderr, "Usage: %s -b base_file_name --graph graph_file_name -q query_file_name -g groundtruth_file_name -k (int k) -L (int L)\n", argv[0]);
+        return 1;
+    }
 
-//    if(L < k){
-//        fprintf(stderr, "Error: L must be greater than k.\n");
-//        fprintf(stderr, "Usage: %s -b base_file_name --graph graph_file_name -q query_file_name -g groundtruth_file_name -k (int k) -L (int L)\n", argv[0]);
-//        return 1;
-//    }
-
-    printf("k = %d || L = %d\n", k, L);
+    printf("k = %d || L = %d || a = %f || R = %d\n", k, L, a, R);
 
     // ===================== CREATE OUTPUT FILE IF NEEDED ================== //
     // Create an output file
@@ -116,16 +117,22 @@ int main(int argc, char *argv[]) {
     }
 
     //Check if the file exists,if it does not create it and write the data else read the data
+    char new_groundtruth_file_name[100];
+    sprintf(new_groundtruth_file_name, "%s%s%d%s", graph_file_name, "_R", R, ".bin");
+
 
     Graph filteredVamanaGraph;
-    int stitchedGraphs_size;
     // Check if the file exists
-    if (access(graph_file_name, F_OK) != -1) {
+    if (access(new_groundtruth_file_name, F_OK) != -1) {
         // File exists, read the data
-        filteredVamanaGraph = *readGraph(graph_file_name);
+        filteredVamanaGraph = *readGraph(new_groundtruth_file_name);
     } else {
-         filteredVamanaGraph = filtered_vamana_indexing(dataSet, L,a,R,&(dataSet->filterInfo));
-        writeVamanaGraph(&filteredVamanaGraph, graph_file_name);
+        time_t start_vamana = time(NULL);
+        filteredVamanaGraph = filtered_vamana_indexing(dataSet, L,a,R,&(dataSet->filterInfo));
+        time_t end_vamana = time(NULL);
+        double time_vamana = difftime(end_vamana, start_vamana);
+        printf("Time to create Filtered graph: %.3f seconds\n", time_vamana);
+        writeVamanaGraph(&filteredVamanaGraph, new_groundtruth_file_name);
     }
 
 
@@ -257,6 +264,7 @@ int main(int argc, char *argv[]) {
             k_closest_size = 0;
         }
     }
+
     printf("Done.\n");
     fflush(stdout);
     time_t end_recall_time = time(NULL);

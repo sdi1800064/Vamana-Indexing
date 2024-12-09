@@ -757,11 +757,6 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filte
     graph.filteredMedoids = *filteredMedoids;
     graph.medoid = medoid_index;
 
-//    printf("Medoid index: %d\n", medoid_index);
-//    for(int i=0; i<filteredMedoids->size; i++){
-//        printf("Medoid index: %d, category: %d\n", filteredMedoids->metoids[i].index, filteredMedoids->metoids[i].category);
-//    }
-
     // traverse the graph in a random way without repetitions
     bool *shuffled_point_indexes = (bool *)calloc(graph.num_points, sizeof(bool));
     int s_index;
@@ -771,10 +766,6 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filte
     int lamda_size = 0;
     int V_size = 0;
 
-    int starting_points[128];
-    for(i = 0; i < 128; i++) {
-        starting_points[i] = rand() % graph.num_points;
-    }
     i=0;
     while(i < graph.num_points) {
         s_index = rand() % graph.num_points;
@@ -856,13 +847,13 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filte
     free(shuffled_point_indexes);
 
 
-    for (int i = 0; i < graph.num_points; i++) {
-        printf("Point %d | Category: %d | Edges: ", graph.points[i].index, graph.points[i].category);
-        for (int j = 0; j < graph.points[i].edge_count; j++) {
-            printf("%d ", graph.points[i].edges[j]);
-        }
-        printf("\n");
-    }
+    // for (int i = 0; i < graph.num_points; i++) {
+    //     printf("Point %d | Category: %d | Edges: ", graph.points[i].index, graph.points[i].category);
+    //     for (int j = 0; j < graph.points[i].edge_count; j++) {
+    //         printf("%d ", graph.points[i].edges[j]);
+    //     }
+    //     printf("\n");
+    // }
     return graph;
 }
 
@@ -1249,13 +1240,13 @@ FilteredMethoidList * get_filtered_medoids(Graph *graph, int *t, filterInfo *fil
 
     free(current_position);
 
-    // Print all the categories for each point in groupedData
-    for (int i = 0; i < filterInfo->num_filters; i++) {
-        printf("Filter %d:\n", filterInfo->filtersPoints[i].filter_index);
-        for (int j = 0; j < filterInfo->filtersPoints[i].count; j++) {
-            printf("Point %d: Category %d\n", groupedData[i][j].index, groupedData[i][j].category);
-        }
-    }
+    // // Print all the categories for each point in groupedData
+    // for (int i = 0; i < filterInfo->num_filters; i++) {
+    //     printf("Filter %d:\n", filterInfo->filtersPoints[i].filter_index);
+    //     for (int j = 0; j < filterInfo->filtersPoints[i].count; j++) {
+    //         printf("Point %d: Category %d\n", groupedData[i][j].index, groupedData[i][j].category);
+    //     }
+    // }
 
     FilteredMethoidList* filteredMedoids = malloc(sizeof(FilteredMethoidList));
 
@@ -1368,7 +1359,7 @@ int find_medoid_for_point(FilteredMethoidList* filteredMedoids, Point* datapoint
  * @param R_stitched The maximum number of neighbors allowed for a point after pruning.
  * @return The graph with the indexed points.
  */
-Graph* stitched_vamana_indexing(DatasetInfo* dataset, int L_small, float a, int R_small, int R_stitched) {
+Graph* stitched_vamana_indexing(DatasetInfo* dataset, int L_small, float a, int R_small) {
     
     printf("Stitched Vamana Indexing: ");
     fflush(stdout);
