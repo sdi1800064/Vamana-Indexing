@@ -1,36 +1,15 @@
 name: C Tests
 
-on: 
-  push:
-  pull_request: # Also run on pull requests
+on: [push, pull_request]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-      
+      - uses: actions/checkout@v3
       - name: Install Dependencies
         run: sudo apt-get install -y build-essential check
-      
       - name: Build and Run Tests
         run: |
           make test
-        # Fail the workflow if make test fails (default behavior)
-
-  prevent-push-on-failure:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    if: ${{ needs.build-and-test.result == 'success' }} # Only run if tests succeed
-    steps:
-      - name: Checkout Code Again
-        uses: actions/checkout@v3
-      
-      - name: Push Changes
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add .
-          git commit -m "Automated changes after successful tests"
-          git push
+        continue-on-error: false
