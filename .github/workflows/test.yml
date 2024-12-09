@@ -1,14 +1,23 @@
 name: C Tests
 
-on: [push, pull_request]
+on: 
+  push:
+    # branches:
+    #   - project-2 # Only run this workflow for pushes to the main branch
+  pull_request:
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      
       - name: Install Dependencies
         run: sudo apt-get install -y build-essential check
+      
       - name: Build and Run Tests
         run: |
           make test
+        # Ensure this step fails the job if "make test" fails
+        continue-on-error: false
