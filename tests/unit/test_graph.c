@@ -214,7 +214,7 @@ START_TEST(test_filtered_Robust_prune_empty_array)
     int size = 0;
 
     
-    int check = filtered_Robust_prune(&graph, 1, array, size, 1.5, 10);
+    int check = filtered_Robust_prune(graph, 1, array, size, 1.5, 10);
 
     ck_assert_int_eq(check, 0);
 
@@ -253,7 +253,6 @@ START_TEST(test_sort_array_based_on_dataset_empty_dataset)
     for (int i = 0; i < 5; i++) {
         array[i] = i;
     }
-    int array_size = 5;
     float number = 4.0;
 
     int check = sort_array_based_on_dataset(&dataset, array, 5, &number);
@@ -265,7 +264,45 @@ START_TEST(test_sort_array_based_on_dataset_empty_dataset)
 }
 END_TEST
 
+START_TEST(test_get_the_difference)
+{
+    int a[] = {1, 2, 3};
+    int b[] = {2, 3, 6};
+    int a_size = 3;
+    int b_size = 3;
+    int c_size = 0;
+    int expected[] = {3};
 
+    int *result = get_the_difference(a, a_size, b, b_size, &c_size);
+    printArray(result, c_size);
+    ck_assert_int_eq(result[0], 1);
+    ck_assert_int_eq(c_size, 1);
+    free(result);
+}
+END_TEST
+
+
+START_TEST(test_arrayContains)
+{
+    int array[] = {1, 2, 3};
+    int size = 3;
+    int value = 2;
+
+    ck_assert_int_eq(arrayContains(array, size, value), 1);
+    ck_assert_int_eq(!arrayContains(array, size, 4), 1);
+}
+END_TEST
+
+START_TEST(test_squared_euclidean_distance)
+{
+    float a[] = {1.0, 2.0, 3.0};
+    float b[] = {4.0, 5.0, 6.0};
+    float expected = 27.0;
+    double result = squared_euclidean_distance(a, b, 3);
+
+    ck_assert_float_eq(squared_euclidean_distance(a, b, 3), expected);
+}
+END_TEST
 
 Suite* graph_suite(void)
 {
@@ -282,6 +319,9 @@ Suite* graph_suite(void)
     tcase_add_test(c_core, test_filtered_Robust_prune_empty_array);
     tcase_add_test(c_core, test_sort_array_empty_array);
     tcase_add_test(c_core, test_sort_array_based_on_dataset_empty_dataset);
+    tcase_add_test(c_core, test_get_the_difference);
+    tcase_add_test(c_core, test_arrayContains);
+    tcase_add_test(c_core, test_squared_euclidean_distance);
 
 
 
