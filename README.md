@@ -1,5 +1,5 @@
-## Καραγιάννη Θωμάς - 1115201800064
-## Μαβραΐδης Κωνσταντίνος - 1115200700101
+## Καραγιάννη Θωμάς sdi1800064@di.uoa.gr - 1115201800064
+## Μαβραΐδης Κωνσταντίνος sdi0700101@di.uoa.gr - 1115200700101
 
 # Execute
 
@@ -49,7 +49,7 @@ You need to use the following flags:
 
 ```-k k``` integer
 
-The arguments a and R are mandatory in order the graph file doesnt exist. In this case the program will create the graph(s) needed and save the graph(s) on a file with this name ```<graph_R<r>.bin```
+The arguments a and R are mandatory in case the graph file doesnt exist. In this case the program will create the graph(s) needed and save the graph(s) on this path ```<graph_file_location_R<r>.bin```
 
 ### Graph Creation
 #### Stitched Graphs
