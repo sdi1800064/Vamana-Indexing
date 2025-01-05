@@ -184,7 +184,6 @@ int main(int argc, char *argv[]) {
             int startIndex = filteredVamanaGraph.medoid;
             filtered_greedy_search(&filteredVamanaGraph, querySet->queries[i].query_vector, &startIndex, 1, &V,&V_size,&lamda,&lamda_size,k, querySet->queries[i].v);
 //             MUST INCLUDE THE DATASET
-
             for( int a = 0; a < k; a++) {
                     add_to_dynamic_array(&arrayOfPredictedIndexes, &sumOfAllClosest,lamda[a]);
             }

@@ -117,21 +117,21 @@ int main(int argc, char *argv[]) {
     
     int stitchedGraphs_count = 0;
 
-    char new_groundtruth_file_name[100];
-    sprintf(new_groundtruth_file_name, "%s%s%d%s", graph_file_name, "_R", R, ".bin");
+    char new_graph_file_name[100];
+    sprintf(new_graph_file_name, "%s%s%d%s", graph_file_name, "_R", R, ".bin");
 
-    if (access(new_groundtruth_file_name, F_OK) == -1) {
+    if (access(new_graph_file_name, F_OK) == -1) {
         int stitchedGraphs_count = dataSet->filterInfo.num_filters;
         int Rsmall = R/2;
         stitchedGraphs = (Graph *)malloc(stitchedGraphs_count * sizeof(Graph));
         time_t start_vamana = time(NULL);
         stitchedGraphs = stitched_vamana_indexing(dataSet, L, a, Rsmall);
         time_t end_vamana = time(NULL);
-        writeGraphs(stitchedGraphs, stitchedGraphs_count, new_groundtruth_file_name);
+        writeGraphs(stitchedGraphs, stitchedGraphs_count, new_graph_file_name);
         double time_vamana = difftime(end_vamana, start_vamana);
         printf("Time to create graphs: %.3f seconds\n", time_vamana);
     }
-    stitchedGraphs = readGraphs(new_groundtruth_file_name, &stitchedGraphs_count);
+    stitchedGraphs = readGraphs(new_graph_file_name, &stitchedGraphs_count);
 
 
     // ============ RECALL AFTER VAMANA INDEXING ============= //
