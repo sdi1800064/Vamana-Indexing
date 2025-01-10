@@ -80,9 +80,11 @@ void* thread_function_vamana_indexing(void* args) {
             filter_dataset.datapoints[j].category = dataset->datapoints[filter_point_index].category;
             filter_dataset.datapoints[j].point_index = dataset->datapoints[filter_point_index].point_index;
             filter_dataset.datapoints[j].timestamp = dataset->datapoints[filter_point_index].timestamp;
-            for(int k = 0; k < 100; k++){
-                filter_dataset.datapoints[j].vectors[k] = dataset->datapoints[filter_point_index].vectors[k];
-            }
+            filter_dataset.datapoints[j].vectors = &dataset->datapoints[filter_point_index].vectors[0];
+
+            // for(int k = 0; k < 100; k++){
+            //     filter_dataset.datapoints[j].vectors[k] = dataset->datapoints[filter_point_index].vectors[k];
+            // }
         }
         // For each filter, run the vamana algorithm
         Graph temp_graph = vamana_indexing(filter_dataset, L_small, a, R_small);

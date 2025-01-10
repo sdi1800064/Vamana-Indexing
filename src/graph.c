@@ -890,11 +890,11 @@ Graph create_random_graph(DatasetInfo dataset, int base_num_dimensions, int max_
         graph.points[i].category = dataset.datapoints[i].category;
 
         // Allocate memory for coordinates
-        graph.points[i].coordinates = (float*)malloc(base_num_dimensions * sizeof(float));
-        if (!graph.points[i].coordinates) {
-            printf("Memory allocation failed!\n");
-            exit(1);
-        }
+        // graph.points[i].coordinates = (float*)malloc(base_num_dimensions * sizeof(float));
+        // if (!graph.points[i].coordinates) {
+        //     printf("Memory allocation failed!\n");
+        //     exit(1);
+        // }
 
         // Allocate memory for edges
         graph.points[i].edges = (int*)malloc(max_edges * sizeof(int));
@@ -922,14 +922,40 @@ Graph create_random_graph(DatasetInfo dataset, int base_num_dimensions, int max_
         }
 
         // Initialize coordinates
-        for(int j = 0; j < base_num_dimensions; j++) {
-            graph.points[i].coordinates[j] = dataset.datapoints[i].vectors[j];
-        }
+        graph.points[i].coordinates = &dataset.datapoints[i].vectors[0];
+
+        // for(int j = 0; j < base_num_dimensions; j++) {
+        //     graph.points[i].coordinates[j] = dataset.datapoints[i].vectors[j];
+        // }
 
     }
 
     return graph;
 }
+
+
+void removeElement(int **array, int *size, int position) {
+    if (position < 0 || position >= *size) {
+        printf("Invalid position!\n");
+        return;
+    }
+    
+    // Swap the element to remove with the last element
+    int temp = (*array)[position];
+    (*array)[position] = (*array)[*size - 1];
+    (*array)[*size - 1] = temp;
+    
+    // Decrease the size of the array
+    *size = *size - 1;
+    
+    // Resize the array
+    if(*size == 0){
+        *array = (int *)realloc(*array, sizeof(int));
+    }else{
+        *array = (int *)realloc(*array, (*size) * sizeof(int));
+    }
+}
+
 
 
 /**
@@ -951,23 +977,22 @@ Graph create_random_graph(DatasetInfo dataset, int base_num_dimensions, int max_
  * @param a The pruning parameter
  * @param R The maximum number of neighbors of p
  */
-void robustPrune(Graph *graph, int p_index, int *V, int V_size, float a, int R) {
+void robustPrune(Graph *graph, int p_index, int **V, int *V_size, float a, int R) {
 
     // Add to V all the neighbors of p and remove p from v if it exists
     for (int i = 0; i < graph->points[p_index].edge_count; i++) {
         int toIndex = graph->points[p_index].edges[i];
         // Add to V all the neighbors of p
-        if (!arrayContains(V, V_size, toIndex)) {
-            add_to_dynamic_array(&V, &V_size, toIndex);
+        if (!arrayContains(*V, *V_size, toIndex)) {
+            add_to_dynamic_array(V, V_size, toIndex);
         }
     }
 
     // remove from V the point p if it exists
     int position;
-    position = arrayContains(V, V_size, p_index);
+    position = arrayContains(*V, *V_size, p_index);
     if(position != -1) {
-        V[position] = V[V_size - 1];
-        V_size--;
+        removeElement(V, V_size, position);
     }
 
     // Set reset edges of p
@@ -980,13 +1005,13 @@ void robustPrune(Graph *graph, int p_index, int *V, int V_size, float a, int R) 
     Point *p_star = NULL;
 
     // While V is not empty
-    while(V_size > 0) {
+    while(*V_size > 0) {
 
         // set as P* the closest point in V to p
         int min_distance = INF;
         int min_index = -1;
-        for (int i = 0; i < V_size; i++) {
-            p_star = &graph->points[V[i]];
+        for (int i = 0; i < *V_size; i++) {
+            p_star = &graph->points[(*V)[i]];
             float distance = squared_euclidean_distance(graph->points[p_index].coordinates, p_star->coordinates, graph->num_dimensions);
             if (distance < min_distance) {
                 min_distance = distance;
@@ -994,29 +1019,27 @@ void robustPrune(Graph *graph, int p_index, int *V, int V_size, float a, int R) 
             }
         }
     
-        if(V[min_index] != p_index){
-            p_star = &graph->points[V[min_index]];
-            // printf("Adding edge from %d -> %d\n", p_index, V[min_index]);
-            addEdge(&graph->points[p_index], V[min_index]);
+        if((*V)[min_index] != p_index){
+            p_star = &graph->points[(*V)[min_index]];
+            // printf("Adding edge from %d -> %d\n", p_index, (*V)[min_index]);
+            addEdge(&graph->points[p_index], (*V)[min_index]);
             // if the number of neighbors of p is equal to R then break
             if (graph->points[p_index].edge_count == R) {
                 break;
             }
 
             // for every point p' in V
-            for (int i = 0; i < V_size; i++) {
+            for (int i = 0; i < *V_size; i++) {
                 // if a * d(p*, p') <= d(p, p') then remove p' from V
-                // d(p*, p') = squared_euclidean_distance(graph->points[V[i]].coordinates, p_star->coordinates, graph->num_dimensions
-                float DISTANCE_PSTAR_PPRIME = squared_euclidean_distance(p_star->coordinates, graph->points[V[i]].coordinates, graph->num_dimensions);
-                float DISTANCE_P_PPRIME = squared_euclidean_distance(graph->points[p_index].coordinates, graph->points[V[i]].coordinates, graph->num_dimensions);
+                // d(p*, p') = squared_euclidean_distance(graph->points[(*V)[i]].coordinates, p_star->coordinates, graph->num_dimensions
+                float DISTANCE_PSTAR_PPRIME = squared_euclidean_distance(p_star->coordinates, graph->points[(*V)[i]].coordinates, graph->num_dimensions);
+                float DISTANCE_P_PPRIME = squared_euclidean_distance(graph->points[p_index].coordinates, graph->points[(*V)[i]].coordinates, graph->num_dimensions);
                 if (a * DISTANCE_PSTAR_PPRIME <= DISTANCE_P_PPRIME) {
-                    V[i] = V[V_size - 1];
-                    V_size--;
+                    removeElement(V, V_size, i);
                 }
             }
         }else{
-            V[min_index] = V[V_size - 1];
-            V_size--;
+            removeElement(V, V_size, min_index);
         }
 
     }
@@ -1170,7 +1193,13 @@ Graph vamana_indexing(DatasetInfo dataset, int L, float a, int R) {
             greedy_search(&graph, graph.points[s_index].coordinates, medoid_index, &V, &V_size, &lamda, &lamda_size, L);
             // =============== ROBUST PRUNE ================ //
 
-            robustPrune(&graph, s_index, V, V_size, a, R);
+            // printf("\nV before Robust Prune\n");
+            // printArray(V, V_size);
+
+            robustPrune(&graph, s_index, &V, &V_size, a, R);
+
+            // printf("\nV After Robust Prune\n");
+            // printArray(V, V_size);
 
             int *new_V = NULL;
             int new_V_size = 0;
@@ -1196,7 +1225,7 @@ Graph vamana_indexing(DatasetInfo dataset, int L, float a, int R) {
                     add_to_dynamic_array(&new_V, &new_V_size, s_index);
 
                     // run robustPrune(p', new_V, a, R)
-                    robustPrune(&graph, P_PRIME_graph_position, new_V, new_V_size, a, R);
+                    robustPrune(&graph, P_PRIME_graph_position, &new_V, &new_V_size, a, R);
                     
                 } else{
                     // else add to neighbors of p' the random point
@@ -1205,10 +1234,20 @@ Graph vamana_indexing(DatasetInfo dataset, int L, float a, int R) {
             }
             // Traversed to another point of the graph
             i++;
-
-            V = NULL;
+            free(new_V);
+            int* temp = (int*)realloc(V, sizeof(int));
+            if(temp == NULL) {
+                printf("Memory reallocation failed!\n");
+                exit(1);
+            }
+            V = temp;
             V_size = 0;
-            lamda = NULL;
+            temp = (int*)realloc(lamda, sizeof(int));
+            if(temp == NULL) {
+                printf("Memory reallocation failed!\n");
+                exit(1);
+            }
+            lamda=temp;
             lamda_size = 0;
         }
 
@@ -1394,9 +1433,10 @@ Graph* stitched_vamana_indexing(DatasetInfo* dataset, int L_small, float a, int 
             filter_dataset[i].datapoints[j].category = dataset->datapoints[filter_point_index].category;
             filter_dataset[i].datapoints[j].point_index = dataset->datapoints[dataset->filterInfo.filtersPoints[i].point_indexes[j]].point_index;
             filter_dataset[i].datapoints[j].timestamp = dataset->datapoints[dataset->filterInfo.filtersPoints[i].point_indexes[j]].timestamp;
-            for(int k = 0; k < 100; k++){
-                filter_dataset[i].datapoints[j].vectors[k] = dataset->datapoints[dataset->filterInfo.filtersPoints[i].point_indexes[j]].vectors[k];
-            }
+            filter_dataset[i].datapoints[j].vectors = &dataset->datapoints[dataset->filterInfo.filtersPoints[i].point_indexes[j]].vectors[0];
+            // for(int k = 0; k < 100; k++){
+            //     filter_dataset[i].datapoints[j].vectors[k] = dataset->datapoints[dataset->filterInfo.filtersPoints[i].point_indexes[j]].vectors[k];
+            // }
 
         }
 

@@ -131,6 +131,7 @@ DatasetInfo* read_dataset(const char *filename) {
         dataset->datapoints[i].point_index = i;
         dataset->datapoints[i].category = (int)buffer[0];
         dataset->datapoints[i].timestamp = buffer[1];
+        dataset->datapoints[i].vectors = (float *)malloc(100 * sizeof(float));
         for (int j = 0; j < 100; j++) {
             dataset->datapoints[i].vectors[j] = buffer[j + 2];
         }
@@ -254,6 +255,7 @@ QueryInfo* read_query_dataset(const char *filename) {
         query_info->queries[i].v = (int)buffer[1];
         query_info->queries[i].l = buffer[2];
         query_info->queries[i].r = buffer[3];
+        query_info->queries[i].query_vector = (float *)malloc(100 * sizeof(float));
         for (size_t j = 0; j < 100; j++) {
             query_info->queries[i].query_vector[j] = buffer[j + 4];
         }

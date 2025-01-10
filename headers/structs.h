@@ -20,12 +20,13 @@ typedef struct {
     int point_index;
     int category;  // Categorical attribute C
     float timestamp;  // Timestamp attribute T
-    float vectors[100];     // Array for the remaining 100-dimensional vectors
+    float *vectors;     // Array for the remaining 100-dimensional vectors
 } DataPoint;
 
 // Define a struct for the result
 typedef struct {
     int num_vectors;
+    int num_dimensions;
     DataPoint *datapoints;
     filterInfo filterInfo;
 } DatasetInfo;
@@ -36,12 +37,13 @@ typedef struct {
     int v; // Value for categorical attribute (or -1)
     float l; // Lower bound for timestamp attribute (or -1)
     float r; // Upper bound for timestamp attribute (or -1)
-    float query_vector[100]; // 100-dimensional query vector
+    float *query_vector; // 100-dimensional query vector
 } QueryPoint;
 
 // Define the QueryInfo structure
 typedef struct {
     int num_queries;    // Number of queries
+    int num_dimensions;
     QueryPoint *queries;
 } QueryInfo;
 
