@@ -113,7 +113,7 @@ void fprint_graph_coordinates(Graph* graph, FILE *outputfd) {
 void fprint_graph(Graph* graph, FILE *outputfd) {
     for (int i = 0; i < graph->num_points; i++) {
         Point p = graph->points[i];
-        fprintf(outputfd, " Point %d | category: %d | edges: ", p.index, p.category);
+        fprintf(outputfd, " Point %d position %d | category: %d | edges position on the graph: ", p.index, i, p.category);
         
         for (int j = 0; j < p.edge_count; j++) {
             fprintf(outputfd, "%d ", p.edges[j]);

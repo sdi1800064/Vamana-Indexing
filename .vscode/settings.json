@@ -1,5 +1,7 @@
 {
-    "files.associations": {
-        "dataset.h": "c"
-    }
+  "files.associations": {
+    "dataset.h": "c",
+    "threadfunctions.h": "c"
+  },
+  "C_Cpp_Runner.msvcBatchPath": ""
 }

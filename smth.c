@@ -1,39 +1,28 @@
+#define _POSIX_C_SOURCE 199309L
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "headers/dataset.h"
-#include "headers/graph.h"
-
+#include <unistd.h>
 
 int main() {
-    const char *filename = "testSets/dummy-data.bin";
-    const char *queryfile = "testSets/dummy-queries.bin";
-    uint32_t total_vectors;
-    
-    DatasetInfo *dataset = read_dataset(filename);
-    // QueryInfo *queryDataSet = read_query_dataset(queryfile, &total_query_vectors);
+    struct timespec start, end;
+    long seconds, nanoseconds;
+    double elapsed;
 
-    if (!dataset) {
-        fprintf(stderr, "Failed to read the dataset.\n");
-        return EXIT_FAILURE;
-    }
+    // Get the start time
+    clock_gettime(CLOCK_MONOTONIC, &start);
 
-    sort_filter_array(&dataset->filterInfo);
+    // Code to measure
+    for (volatile int i = 0; i < 100000000; i++); // Example workload
 
-    // printf("Number of filters: %u\n", dataset->filterInfo.num_filters);
-    // for (int i = 0; i < dataset->filterInfo.num_filters; i++) {
-    //     printf("Filter %d: number of vectors: %d\n", dataset->filterInfo.filtersPoints[i].filter_index, dataset->filterInfo.filtersPoints[i].count );
-    //     for (int j = 0; j < dataset->filterInfo.filtersPoints[i].count; j++) {
-    //         printf("%d ", dataset->filterInfo.filtersPoints[i].point_indexes[j]);
-    //     }
-    //     printf("\n");
-    // }
+    // Get the end time
+    clock_gettime(CLOCK_MONOTONIC, &end);
 
-    // cprint_dataset(dataset, 4);
-    // cprint_query_dataset(queryDataSet, 4);
+    // Calculate elapsed time
+    seconds = end.tv_sec - start.tv_sec;
+    nanoseconds = end.tv_nsec - start.tv_nsec;
+    elapsed = seconds + nanoseconds*1e-9;
 
-    // print_dataset(dataset);
+    printf("Elapsed time: %.9f seconds\n", elapsed);
 
-    free_dataset(dataset);
-    return EXIT_SUCCESS;
-}
+    return 0;

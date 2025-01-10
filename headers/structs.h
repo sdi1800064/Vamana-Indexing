@@ -74,6 +74,22 @@ typedef struct {
     int  medoid;
 } Graph;
 
+typedef struct {
+    int id;
+    DatasetInfo* dataset;
+    int *filterList;
+    int numOfFilters;
+    int L_small;
+    float a;
+    int R_small;
+    Graph* filter_graph;
+    double totalTimeTaken;
+    double min_time;
+    double max_time;
+    double avg_time;
+} ThreadArgs;
+
+
 // ==================== Structures ==================== //
 
 
