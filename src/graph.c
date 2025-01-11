@@ -5,8 +5,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
-#include <immintrin.h>
-
+#include <immintrin.h>  // for AVX intrinsics
 
 #include "../headers/graph.h"
 #include "../headers/dataset.h"
@@ -598,31 +597,66 @@ int arrayContainsForRobustRrune(int *V, int V_size, int node) {
  * @param n The number of dimensions (length of the vectors)
  * @return The squared Euclidean distance between the two vectors
  */
-double squared_euclidean_distance(float *p, float *q, int n) {
-    __m256 sum_vec = _mm256_setzero_ps();  // Initialize sum vector to zero
 
-    int i;
-    for (i = 0; i <= n - 8; i += 8) {
-        __m256 p_vec = _mm256_loadu_ps(&p[i]);  // Load 8 floats from p
-        __m256 q_vec = _mm256_loadu_ps(&q[i]);  // Load 8 floats from q
-        __m256 diff_vec = _mm256_sub_ps(p_vec, q_vec);  // Calculate difference
-        sum_vec = _mm256_add_ps(sum_vec, _mm256_mul_ps(diff_vec, diff_vec));  // Square and accumulate
+
+/**
+ * Computes the squared Euclidean distance between two vectors p and q
+ * of length n using AVX2 intrinsics (8 floats at a time).
+ *
+ * Compile with:  gcc -mavx2 -O3 your_source.c -o your_program
+ *
+ * @param p pointer to the first float vector
+ * @param q pointer to the second float vector
+ * @param n number of elements in each vector
+ * @return squared Euclidean distance
+ */
+float squared_euclidean_distance( float *p,  float *q, int n) {
+    // 256-bit register to accumulate partial sums
+    __m256 sum_vec = _mm256_setzero_ps();
+    int i = 0;
+
+    // Process 8 floats at a time
+    for (; i + 8 <= n; i += 8) {
+        // Load 8 floats from p and q
+        __m256 p_vec = _mm256_loadu_ps(&p[i]);
+        __m256 q_vec = _mm256_loadu_ps(&q[i]);
+
+        // diff = p_vec - q_vec
+        __m256 diff = _mm256_sub_ps(p_vec, q_vec);
+
+        // sq = diff * diff
+        __m256 sq = _mm256_mul_ps(diff, diff);
+
+        // sum_vec += sq
+        sum_vec = _mm256_add_ps(sum_vec, sq);
     }
 
-    // Horizontal sum of the vector
-    float sum_array[8];
-    _mm256_storeu_ps(sum_array, sum_vec);
-    double sum = sum_array[0] + sum_array[1] + sum_array[2] + sum_array[3] +
-                 sum_array[4] + sum_array[5] + sum_array[6] + sum_array[7];
+    // Now we need to reduce sum_vec’s 8 lanes into a single float
+    // 1) horizontal add pairs
+    __m256 hsum = _mm256_hadd_ps(sum_vec, sum_vec);
+    // hsum has pairs added; still 8 floats
+    __m128 sum128 = _mm_add_ps(_mm256_castps256_ps128(hsum),
+                               _mm256_extractf128_ps(hsum, 1));
+    // sum128 now has 4 floats, each is a partial sum
+    // horizontal add again
+    sum128 = _mm_hadd_ps(sum128, sum128);
+    // Now the low 2 floats are partial sums
+    sum128 = _mm_hadd_ps(sum128, sum128);
+    // The low float now has the total sum of those 8 lanes
+    float total = _mm_cvtss_f32(sum128);
 
-    // Handle remaining elements
+    // Handle leftover elements (if n is not multiple of 8)
     for (; i < n; i++) {
         float diff = p[i] - q[i];
-        sum += diff * diff;
+        total += diff * diff;
     }
 
-    return sum;  // Return the squared Euclidean distance
+    return total;
 }
+
+
+
+
 
 /**
  * Calculates the medoid from a set of sampled points
