@@ -32,7 +32,7 @@ OBJ_FILES := $(SRC_FILES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 # Executable name
 
 # Compiler flags (for normal build)
-CFLAGS = -I$(HEADER_DIR) -Wall -Wextra -O3
+CFLAGS = -I$(HEADER_DIR) -Wall -Wextra -O3 -mavx2
 
 # Compiler flags for debug build (-g for debug info, -O0 to disable optimization)
 DEBUG_FLAGS = -I$(HEADER_DIR) -Wall -Wextra -g -O0
