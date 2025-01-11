@@ -804,7 +804,6 @@ void check_for_duplicates(int *array, int size) {
  * @param R The maximum number of neighbors allowed for a point after pruning.
  */
 Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filterInfo *filterinfo) {
-
     printf("Starting Vamana Indexing\n");
 
     Graph graph = initialise_graph(dataset, R);
@@ -825,19 +824,46 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filte
     graph.medoid = medoid_index;
 
     // traverse the graph in a random way without repetitions
-    bool *shuffled_point_indexes = (bool *)calloc(graph.num_points, sizeof(bool));
-    int s_index;
-    int i=0;
-    int* V = NULL;
-    int *lamda = NULL;
-    int lamda_size = 0;
-    int V_size = 0;
+    int *random_permutation = (int *) malloc(graph.num_points * sizeof(int));
+    generate_random_permutation(random_permutation, graph.num_points);
 
-    i=0;
-    while(i < graph.num_points) {
-       printf("count i  %d\n", i);
-        s_index = rand() % graph.num_points;
-        if (!shuffled_point_indexes[s_index]) {
+
+    PointsPerFilter * pointsPerFilterArray = (PointsPerFilter *)malloc(sizeof(PointsPerFilter) * filterinfo->num_filters);
+    for(int x=0; x<graph.num_points; x++) {
+        int category = graph.points[x].category;
+        if(category != -1) {
+            pointsPerFilterArray[category].points[pointsPerFilterArray[category].num_points] = x;
+            pointsPerFilterArray[category].num_points++;
+        }
+    }
+
+
+    // Sort pointsPerFilterArray by descending order of num_points
+    for (int i = 0; i < filterinfo->num_filters - 1; i++) {
+        for (int j = 0; j < filterinfo->num_filters - i - 1; j++) {
+            if (pointsPerFilterArray[j].num_points < pointsPerFilterArray[j + 1].num_points) {
+                PointsPerFilter temp = pointsPerFilterArray[j];
+                pointsPerFilterArray[j] = pointsPerFilterArray[j + 1];
+                pointsPerFilterArray[j + 1] = temp;
+            }
+        }
+    }
+
+    int sizerandpom = graph.num_points;
+
+    for (int x= 0; x<=filterinfo->num_filters;x++) {
+        auto pointPerFilter = pointsPerFilterArray[x];
+
+        int i = 0;
+        int s_index;
+        int* V = NULL;
+        int *lamda = NULL;
+        int lamda_size = 0;
+        int V_size = 0;
+
+        while(i < pointPerFilter.num_points) {
+            printf("count i  %d\n", i);
+            s_index = pointsPerFilterArray[x].points[i];
             /**
              * Finds the medoid from the filtered medoids that is in the same category as the given datapoint.
              * If the datapoint does not have a category, it returns the global medoid.
@@ -847,28 +873,28 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filte
              * @param medoid_index The global medoid index.
              * @return The index of the medoid in the same category as the datapoint, or the global medoid index if no category.
              */
-            shuffled_point_indexes[s_index] = true;
+
             // printf("Indexing point %d\n", s_index);
 
             // Set as the starting index the node that is at the starting_points[category]
-           int F_Fx_si = find_medoid_for_point(filteredMedoids, &graph.points[s_index], medoid_index);
-//            int *S_Fx_si = malloc(sizeof(int));
-//            S_Fx_si[0] = graph->points[F_Fx_si];
+            int F_Fx_si = find_medoid_for_point(filteredMedoids, &graph.points[s_index], medoid_index);
+            //            int *S_Fx_si = malloc(sizeof(int));
+            //            S_Fx_si[0] = graph->points[F_Fx_si];
             int sp_size = 1;
 
             // =============== GREEDY SEARCH ================ //
             filtered_greedy_search(&graph, graph.points[s_index].coordinates, &F_Fx_si, sp_size, &V, &V_size, &lamda, &lamda_size, L, graph.points[s_index].category);
 
-//            printf("Edges of point %d", s_index);
-//            for (int i = 0; i < graph.points[s_index].edge_count; i++) {
-//                printf("Edge %d : ", graph.points[s_index].edges[i] );
-//            }
+            //            printf("Edges of point %d", s_index);
+            //            for (int i = 0; i < graph.points[s_index].edge_count; i++) {
+            //                printf("Edge %d : ", graph.points[s_index].edges[i] );
+            //            }
             // =============== ROBUST PRUNE ================ //
             filtered_Robust_prune(&graph, s_index, V, V_size, a, R);
 
-//            for (int i = 0; i < graph.points[s_index].edge_count; i++) {
-//                printf("Edge %d : ", graph.points[s_index].edges[i] );
-//            }
+            //            for (int i = 0; i < graph.points[s_index].edge_count; i++) {
+            //                printf("Edge %d : ", graph.points[s_index].edges[i] );
+            //            }
 
             int *new_V = NULL;
             int new_V_size = 0;
@@ -878,7 +904,7 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filte
 
                 // if | neighbor(p') U random point | > R then
                 Point *P_PRIME = &graph.points[graph.points[s_index].edges[j]];
-                
+
                 if(P_PRIME->edge_count + 1 > R) {
                     // run robustPrune(p', Neighbors of p' U random point, a, R)
                     // create a new visited list that contains only the neighbors of p' and the random point
@@ -895,7 +921,7 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filte
                     // run robustPrune(p', new_V, a, R)
                     filtered_Robust_prune(&graph, P_PRIME->index, new_V, new_V_size, a, R);
                     free(new_V);
-                    
+
                 } else{
                     // else add to neighbors of p' the random point
                     addEdge(P_PRIME, s_index);
@@ -911,11 +937,10 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filte
             lamda = NULL;
             lamda_size = 0;
         }
-
+        free(V);
+        free(lamda);
     }
-    free(V);
-    free(lamda);            
-    free(shuffled_point_indexes);
+
 
 
     // for (int i = 0; i < graph.num_points; i++) {

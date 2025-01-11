@@ -74,6 +74,12 @@ typedef struct {
     int  medoid;
 } Graph;
 
+typedef struct  {
+    int * points;
+    int num_points;
+    int filter_Category;
+}PointsPerFilter;
+
 // ==================== Structures ==================== //
 
 
