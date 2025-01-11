@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
+#include <immintrin.h>
+
 
 #include "../headers/graph.h"
 #include "../headers/dataset.h"
@@ -589,22 +591,38 @@ int arrayContainsForRobustRrune(int *V, int V_size, int node) {
 
 /**
  * Calculates the squared Euclidean distance between two vectors of length n
+ * (number of dimensions) using AVX2 for optimization.
  * 
- * @param p The first vector
- * @param q The second vector
- * @param n The length of the vectors
+ * @param p The first vector (of length n)
+ * @param q The second vector (of length n)
+ * @param n The number of dimensions (length of the vectors)
  * @return The squared Euclidean distance between the two vectors
  */
 double squared_euclidean_distance(float *p, float *q, int n) {
-    // Calculate the difference between the elements of the two vectors
-    float sum = 0.0f;
-    for (int i = 0; i < n; i++) {
-        float diff = p[i] - q[i];  // Calculate the difference
-        sum += diff * diff;        // Square the difference and add to sum
+    __m256 sum_vec = _mm256_setzero_ps();  // Initialize sum vector to zero
+
+    int i;
+    for (i = 0; i <= n - 8; i += 8) {
+        __m256 p_vec = _mm256_loadu_ps(&p[i]);  // Load 8 floats from p
+        __m256 q_vec = _mm256_loadu_ps(&q[i]);  // Load 8 floats from q
+        __m256 diff_vec = _mm256_sub_ps(p_vec, q_vec);  // Calculate difference
+        sum_vec = _mm256_add_ps(sum_vec, _mm256_mul_ps(diff_vec, diff_vec));  // Square and accumulate
     }
+
+    // Horizontal sum of the vector
+    float sum_array[8];
+    _mm256_storeu_ps(sum_array, sum_vec);
+    double sum = sum_array[0] + sum_array[1] + sum_array[2] + sum_array[3] +
+                 sum_array[4] + sum_array[5] + sum_array[6] + sum_array[7];
+
+    // Handle remaining elements
+    for (; i < n; i++) {
+        float diff = p[i] - q[i];
+        sum += diff * diff;
+    }
+
     return sum;  // Return the squared Euclidean distance
 }
-
 
 /**
  * Calculates the medoid from a set of sampled points
@@ -628,6 +646,8 @@ int calculate_medoid(Graph *graph, int *sample_point_indexes, int num_sample_poi
 
 
     // Loop through all pairs of sampled points and calculate the pairwise distances
+    int medoid_index = 0;
+    float min_distance_sum = FLT_MAX;
     for (int i = 0; i < num_sample_points; i++) {
         Point *point_i = &graph->points[sample_point_indexes[i]];
         for (int j = 0; j < num_sample_points; j++) {
@@ -637,17 +657,20 @@ int calculate_medoid(Graph *graph, int *sample_point_indexes, int num_sample_poi
                 distance_sums[i] += dist;
             }
         }
-    }
-
-    // Find the point with the smallest sum of distances (i.e., the medoid)
-    int medoid_index = 0;
-    float min_distance_sum = distance_sums[0];
-    for (int i = 1; i < num_sample_points; i++) {
         if (distance_sums[i] < min_distance_sum) {
             min_distance_sum = distance_sums[i];
             medoid_index = i;
         }
     }
+
+    // Find the point with the smallest sum of distances (i.e., the medoid)
+    
+    // for (int i = 1; i < num_sample_points; i++) {
+    //     if (distance_sums[i] < min_distance_sum) {
+    //         min_distance_sum = distance_sums[i];
+    //         medoid_index = i;
+    //     }
+    // }
 
     // Free the allocated memory
     free(distance_sums);

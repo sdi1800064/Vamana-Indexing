@@ -69,8 +69,8 @@ int main(int argc, char *argv[]) {
     double time_vamana = get_elapsed_time(startVamana);
 
     char graph_file_name[100]; // Ensure this is large enough
-    snprintf(graph_file_name, sizeof(graph_file_name), "%s_%s%d%s", "stitchedGraph", "R", R, "_");
-    snprintf(graph_file_name, sizeof(graph_file_name), "%s#%d", dataSet->num_vectors, ".bin");
+    snprintf(graph_file_name, sizeof(graph_file_name), "%s_R%d_L%d_a%.2f_#%d.bin", 
+            "stitchedGraph", R, L, a, dataSet->num_vectors);
 
     writeGraphs(graph, num_of_graphs, graph_file_name);
 
