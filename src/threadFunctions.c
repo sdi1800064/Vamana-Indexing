@@ -177,7 +177,7 @@ Graph* threadStitchedVamanaIndexing(DatasetInfo* dataset, int L_small, float a, 
 
             // Up the load
             if(dataset->filterInfo.filtersPoints[i].count > 500){
-                int loadCount = 2 * dataset->filterInfo.filtersPoints[i].count;
+                int loadCount = (int)ceil(2.5 * dataset->filterInfo.filtersPoints[i].count);
                 threadLoad[min_thread] += loadCount;    
             }else{
                 threadLoad[min_thread] += dataset->filterInfo.filtersPoints[i].count;
@@ -222,6 +222,19 @@ Graph* threadStitchedVamanaIndexing(DatasetInfo* dataset, int L_small, float a, 
     // filter_graph[num_filters of the dataset]
     Graph* filter_graph = (Graph*) malloc(dataset->filterInfo.num_filters * sizeof(Graph));
 
+    // Construct the filename using the parameters a, R, L, and number of points
+    char filename[100];
+    sprintf(filename, "graph_a%.2f_R%d_L%d_points%d.bin", a, R_small, L_small, dataset->num_vectors);
+
+    // Open/create the file
+    FILE *file = fopen(filename, "wb");
+    if (!file) {
+        perror("Error opening file");
+        exit(1);
+    }
+
+    // Make sure to close the file after usage
+
     for (int i = 0; i < numOfThreads; i++) {
         // thread_filter_graph[threadFilterCount[i]]
         pthread_join(threads[i], NULL);
@@ -230,7 +243,7 @@ Graph* threadStitchedVamanaIndexing(DatasetInfo* dataset, int L_small, float a, 
         // printf("Number of graphs assigned to thread %d : %d\n", i, thread_numOfGraphs);
 
         // Print the times of each thread
-        printf("Thread %d / %d -> #Filters = %d | min_time=%.2f | max_time=%.2f | avg_time=%.2f | total_time_taken=%.2f |\n", i+1, numOfThreads, thread_numOfGraphs, thread_args[i].min_time, thread_args[i].max_time, thread_args[i].avg_time, thread_args[i].totalTimeTaken);
+        fprintf(file, "Thread %d / %d -> #Filters = %d | min_time=%.2f | max_time=%.2f | avg_time=%.2f | total_time_taken=%.2f |\n", i+1, numOfThreads, thread_numOfGraphs, thread_args[i].min_time, thread_args[i].max_time, thread_args[i].avg_time, thread_args[i].totalTimeTaken);
 
         // For every filter in the list of filters of the thread
         for(int j = 0; j < thread_numOfGraphs; j++){
@@ -243,6 +256,7 @@ Graph* threadStitchedVamanaIndexing(DatasetInfo* dataset, int L_small, float a, 
     // printf("Joined!\n");
     free(threads);
     free(thread_args);
+    fclose(file);
 
     return filter_graph;
 }

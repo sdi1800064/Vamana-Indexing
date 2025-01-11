@@ -1225,7 +1225,7 @@ Graph vamana_indexing(DatasetInfo dataset, int L, float a, int R) {
 
     // Calculating the medoid
     // ======= CHANGE THE PERCENTAGE OF THE SAMPLES HERE ======== //
-    int percentage = 1;
+    int percentage = 0;
     // ========================================================== //
     int medoid_index;
     

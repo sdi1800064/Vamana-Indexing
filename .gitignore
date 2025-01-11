@@ -2,3 +2,5 @@ smth.c
 .vscode/c_cpp_properties.json
 testSets/contest-queries-release-1m.bin
 testSets/contest-data-release-1m.bin
+graphs/
+*.bin

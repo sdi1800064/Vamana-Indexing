@@ -14,10 +14,10 @@
 int main(int argc, char *argv[]) {
 
     // Get the current time
-    time_t t = time(NULL);
+    time_t timet = time(NULL);
 
     // Seed the random number generator with the current time
-    srand((unsigned int)t);
+    srand((unsigned int)timet);
     
     printf("Starting...\n");
     // Initialize variables
@@ -29,6 +29,7 @@ int main(int argc, char *argv[]) {
     int L = -1;
     float a = -1.0;
     int R = -1;
+    int t = -1;
 
     // Iterate through command line arguments
     for (int i = 1; i < argc; i++) {
@@ -56,23 +57,26 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "-R") == 0 && i + 1 < argc) {
             R = atoi(argv[i + 1]);
             i++;
+        } else if (strcmp(argv[i], "-t") == 0 && i + 1 < argc) {
+            t = atoi(argv[i + 1]);
+            i++;
         }
     }
 
     // Check if all required arguments are provided
-    if (!base_file_name || !graph_file_name || !query_file_name || !groundtruth_file_name || k == -1 || L == -1 || a == -1 || R == -1) {
+    if (!base_file_name || !graph_file_name || !query_file_name || !groundtruth_file_name || k == -1 || L == -1 || a == -1 || R == -1 || t == -1) {
         fprintf(stderr, "Error: Missing required arguments.\n");
-        fprintf(stderr, "Usage: %s -b base_file_name --graph graph_file_name -q query_file_name -g groundtruth_file_name -k (int k) -L (int L)\n", argv[0]);
+        fprintf(stderr, "Usage: %s -b base_file_name --graph graph_file_name -q query_file_name -g groundtruth_file_name -k (int k) -L (int L) -R (int R) -t (int t)\n", argv[0]);
         return 1;
     }
 
     if(L < k){
         fprintf(stderr, "Error: L must be greater than k.\n");
-        fprintf(stderr, "Usage: %s -b base_file_name --graph graph_file_name -q query_file_name -g groundtruth_file_name -k (int k) -L (int L)\n", argv[0]);
+        fprintf(stderr, "Usage: %s -b base_file_name --graph graph_file_name -q query_file_name -g groundtruth_file_name -k (int k) -L (int L) -R (int R) -t (int t)\n", argv[0]);
         return 1;
     }
 
-    printf("k = %d || L = %d || a = %f || R = %d\n", k, L, a, R);
+    printf("baseFile = %s || queryFile = %s || groundTruthFile = %s\nk = %d || L = %d || a = %f || R = %d || t = %d\n", base_file_name, query_file_name, groundtruth_file_name, k, L, a, R, t);
 
     // ===================== CREATE OUTPUT FILE IF NEEDED ================== //
     // Create an output file
@@ -121,11 +125,12 @@ int main(int argc, char *argv[]) {
     
     int stitchedGraphs_count = 0;
     char new_graph_file_name[100];
-    sprintf(new_graph_file_name, "%s%s%d%s", graph_file_name, "_R", R, ".bin");
+    snprintf(new_graph_file_name, sizeof(new_graph_file_name), "%s_R%d_L%d_a%.2f_#%d.bin", 
+            "stitchedGraph", R, R, L, a, dataSet->num_vectors);
+    int Rsmall = R/2;
 
     if (access(graph_file_name, F_OK) == -1 && access(new_graph_file_name, F_OK) == -1) {
         stitchedGraphs_count = dataSet->filterInfo.num_filters;
-        int Rsmall = R/2;
         stitchedGraphs = (Graph *)malloc(stitchedGraphs_count * sizeof(Graph));
         time_t start_vamana = time(NULL);
         stitchedGraphs = threadStitchedVamanaIndexing(dataSet, L, a, Rsmall, NUM_THREADS);
@@ -136,13 +141,25 @@ int main(int argc, char *argv[]) {
         printf("Time to create graphs: %.3f seconds\n", time_vamana);
     }
     stitchedGraphs = readGraphs(graph_file_name, &stitchedGraphs_count);
-
+    
+    char filename[100];
+    sprintf(filename, "recall_a%.2f_R%d_L%d_points%d.bin", a, Rsmall, L, dataSet->num_vectors);
+    // Open/create the file
+    FILE *file = fopen(filename, "wb");
+    if (!file) {
+        perror("Error opening file");
+        exit(1);
+    }
+    // Redirect stdout to the file
+    dup2(fileno(file), STDOUT_FILENO);
 
     // ============ RECALL AFTER VAMANA INDEXING ============= //
 
     calculateRecallStitched(dataSet, querySet, groundTruthSet, stitchedGraphs, stitchedGraphs_count, L, k, NUM_THREADS);
 
     // ============== FREE MEMORY ================= //
+    // Redirect stdout back to the terminal
+    dup2(STDOUT_FILENO, fileno(stdout));
     
     
     free(dataSet->datapoints);
