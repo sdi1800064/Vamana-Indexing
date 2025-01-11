@@ -62,6 +62,10 @@ recallf: $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/recallFilteredVamana
 stitched: $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/stitchedVamana.c
 	$(CC) -o stitchedVamana $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/stitchedVamana.c $(CFLAGS)
 
+#create the  filtered vamana
+createFiltered: $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/CreateFilteredVamana.c
+	$(CC) -mavx2 -O3 -o createFilteredVamana $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/CreateFilteredVamana.c $(CFLAGS)
+
 # Rule to compile and link the test executable
 smth: smth.c $(SRC_DIR)/dataset.c
 	$(CC) -o smth smth.c $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(CFLAGS) $(LDFLAGS)
