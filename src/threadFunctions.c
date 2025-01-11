@@ -30,7 +30,7 @@ void* thread_function_vamana_indexing(void* args) {
     double min_time = DBL_MAX;
     double avg_time = 0.0;
 
-    // printf("Thread %d | numofFilters %d:\n", thread_args->id, numOfFilters);
+    printf("Thread %d | numofFilters %d:\n", thread_args->id, numOfFilters);
     // for (int i = 0; i < numOfFilters; i++) {
     //     printf("%d ", filterList[i]);
     // }
@@ -64,7 +64,7 @@ void* thread_function_vamana_indexing(void* args) {
             exit(1);
         }
 
-        // printf(" Thread %d | number of point in filter %d\n", thread_args->id, filter_dataset.num_vectors);
+        printf(" Thread %d | number of point in filter %d\n", thread_args->id, filter_dataset.num_vectors);
         // if(filter_dataset.num_vectors ==15 && thread_args->id == 1){
         //     cprint_dataset(dataset, filterIndex);
         // }
