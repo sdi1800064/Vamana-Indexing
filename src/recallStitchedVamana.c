@@ -15,6 +15,19 @@ int main(int argc, char *argv[]) {
 
     // Get the current time
     time_t timet = time(NULL);
+    char *filename = "results.txt";
+
+    // Open/create the file
+    FILE *resultFile = fopen(filename, "a");
+    if (!resultFile) {
+        perror("Error opening file");
+        exit(1);
+    }
+    fseek(resultFile, 0, SEEK_END);
+    fprintf(resultFile,"---------------------------------------------\n");
+
+    fprintf(resultFile, "Starting recall\n");
+
 
     // Seed the random number generator with the current time
     srand((unsigned int)timet);
@@ -77,6 +90,7 @@ int main(int argc, char *argv[]) {
     }
 
     printf("baseFile = %s || queryFile = %s || groundTruthFile = %s\nk = %d || L = %d || a = %f || R = %d || t = %d\n", base_file_name, query_file_name, groundtruth_file_name, k, L, a, R, t);
+    fprintf(resultFile, "baseFile = %s || queryFile = %s || groundTruthFile = %s\nk = %d || L = %d || a = %f || R = %d || t = %d\n", base_file_name, query_file_name, groundtruth_file_name, k, L, a, R, t);
 
     // ===================== CREATE OUTPUT FILE IF NEEDED ================== //
     // Create an output file
@@ -126,41 +140,29 @@ int main(int argc, char *argv[]) {
     int stitchedGraphs_count = 0;
     char new_graph_file_name[100];
     snprintf(new_graph_file_name, sizeof(new_graph_file_name), "%s_R%d_L%d_a%.2f_#%d.bin", 
-            "stitchedGraph", R, R, L, a, dataSet->num_vectors);
+            "graphs/stitchedGraph", R, L, a, dataSet->num_vectors);
     int Rsmall = R/2;
+    if(access(graph_file_name, F_OK) == -1){
+        graph_file_name = new_graph_file_name;
+    }
 
-    if (access(graph_file_name, F_OK) == -1 && access(new_graph_file_name, F_OK) == -1) {
+    if (access(new_graph_file_name, F_OK) == -1) {
         stitchedGraphs_count = dataSet->filterInfo.num_filters;
         stitchedGraphs = (Graph *)malloc(stitchedGraphs_count * sizeof(Graph));
         time_t start_vamana = time(NULL);
-        stitchedGraphs = threadStitchedVamanaIndexing(dataSet, L, a, Rsmall, NUM_THREADS);
+        stitchedGraphs = threadStitchedVamanaIndexing(dataSet, L, a, Rsmall, NUM_THREADS, resultFile);
         time_t end_vamana = time(NULL);
         writeGraphs(stitchedGraphs, stitchedGraphs_count, new_graph_file_name);
-        graph_file_name = new_graph_file_name;
         double time_vamana = difftime(end_vamana, start_vamana);
         printf("Time to create graphs: %.3f seconds\n", time_vamana);
     }
-    stitchedGraphs = readGraphs(graph_file_name, &stitchedGraphs_count);
+    stitchedGraphs = readGraphs(new_graph_file_name, &stitchedGraphs_count);
     
-    char filename[100];
-    sprintf(filename, "recall_a%.2f_R%d_L%d_points%d.bin", a, Rsmall, L, dataSet->num_vectors);
-    // Open/create the file
-    FILE *file = fopen(filename, "wb");
-    if (!file) {
-        perror("Error opening file");
-        exit(1);
-    }
-    // Redirect stdout to the file
-    dup2(fileno(file), STDOUT_FILENO);
-
     // ============ RECALL AFTER VAMANA INDEXING ============= //
 
-    calculateRecallStitched(dataSet, querySet, groundTruthSet, stitchedGraphs, stitchedGraphs_count, L, k, NUM_THREADS);
+    calculateRecallStitched(dataSet, querySet, groundTruthSet, stitchedGraphs, stitchedGraphs_count, L, k, NUM_THREADS, resultFile);
 
     // ============== FREE MEMORY ================= //
-    // Redirect stdout back to the terminal
-    dup2(STDOUT_FILENO, fileno(stdout));
-    
     
     free(dataSet->datapoints);
     free(dataSet);
@@ -168,6 +170,8 @@ int main(int argc, char *argv[]) {
     free(querySet);
     free(groundTruthSet);
     printf("Exiting the program..\n");
+    fprintf(resultFile,"---------------------------------------------\n");
+    fclose(resultFile);
 
     // Close the file
     // fclose(outputfd);

@@ -5,24 +5,21 @@
 #include <unistd.h>
 
 int main() {
-    struct timespec start, end;
-    long seconds, nanoseconds;
-    double elapsed;
-
-    // Get the start time
-    clock_gettime(CLOCK_MONOTONIC, &start);
-
-    // Code to measure
-    for (volatile int i = 0; i < 100000000; i++); // Example workload
-
-    // Get the end time
-    clock_gettime(CLOCK_MONOTONIC, &end);
-
-    // Calculate elapsed time
-    seconds = end.tv_sec - start.tv_sec;
-    nanoseconds = end.tv_nsec - start.tv_nsec;
-    elapsed = seconds + nanoseconds*1e-9;
-
-    printf("Elapsed time: %.9f seconds\n", elapsed);
+    char new_graph_file_name[100];
+    int R = 20;
+    int L = 200;
+    float a = 1.2;
+    int numOfPoints = 10001;
+    snprintf(new_graph_file_name, sizeof(new_graph_file_name), "%s_R%d_L%d_a%.2f_#%d.bin", 
+            "graphs/stitchedGraph", R, L, a, numOfPoints);
+    FILE* output;
+    output = fopen(new_graph_file_name, "w");
+    if (output == NULL) {
+        perror("Error opening output file");
+        exit(EXIT_FAILURE);
+    }
+    printf("Found it!\n");
+    fclose(output);
 
     return 0;
+}

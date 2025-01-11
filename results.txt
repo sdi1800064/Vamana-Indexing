@@ -1,0 +1,19 @@
+---------------------------------------------
+Starting indexing
+
+base_file = testSets/dummy-data.bin | L = 120 | a = 1.200000 | R = 60 | threads = 1
+Thread 1 / 1 -> #Filters = 129 | min_time=0.00 | max_time=15.18 | avg_time=0.27 | total_time_taken=34.36 |
+Time taken to index all graphs 34.36 seconds
+---------------------------------------------
+---------------------------------------------
+Starting recall
+baseFile = testSets/dummy-data.bin || queryFile = testSets/dummy-queries.bin || groundTruthFile = testSets/groundtruth.ivecs
+k = 100 || L = 120 || a = 1.200000 || R = 60 || t = 1
+Calculating recall: Done.
+Time taken: 92.789 seconds
+Found 460878 / 469713
+Recall: 98.119%
+Average query time: 0.009 seconds
+Max query time: 0.145 seconds
+Min query time: 0.000 seconds
+---------------------------------------------

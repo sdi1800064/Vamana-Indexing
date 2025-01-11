@@ -11,9 +11,10 @@
 #include "../headers/threadFunctions.h"
 #include "../headers/timeFunctions.h"
 
-void calculateRecallStitched(DatasetInfo* dataSet, QueryInfo* querySet, int** groundTruthSet, Graph* stitchedGraphs, int stitchedGraphs_count, int L, int k, int numOfThreads){
+void calculateRecallStitched(DatasetInfo* dataSet, QueryInfo* querySet, int** groundTruthSet, Graph* stitchedGraphs, int stitchedGraphs_count, int L, int k, int numOfThreads, FILE* resultFile) {
     
     printf("Calculating recall: ");
+    fprintf(resultFile,"Calculating recall: ");
     fflush(stdout);
 
     float recall = 0.0;
@@ -140,5 +141,13 @@ void calculateRecallStitched(DatasetInfo* dataSet, QueryInfo* querySet, int** gr
     printf("Average query time: %.3f seconds\n", total_query_time / querySet->num_queries);
     printf("Max query time: %.3f seconds\n", max_query_time);
     printf("Min query time: %.3f seconds\n", min_query_time);
+
+    fprintf(resultFile, "Done.\n");
+    fprintf(resultFile, "Time taken: %.3f seconds\n", elapsed);
+    fprintf(resultFile, "Found %d / %d\n", total_count, prediction_count);
+    fprintf(resultFile, "Recall: %.3f%%\n", recall*100);
+    fprintf(resultFile, "Average query time: %.3f seconds\n", total_query_time / querySet->num_queries);
+    fprintf(resultFile, "Max query time: %.3f seconds\n", max_query_time);
+    fprintf(resultFile, "Min query time: %.3f seconds\n", min_query_time);
 
 }

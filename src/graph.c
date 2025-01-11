@@ -670,7 +670,7 @@ float squared_euclidean_distance( float *p,  float *q, int n) {
  * @return The index of the medoid in the original graph
  */
 int calculate_medoid(Graph *graph, int *sample_point_indexes, int num_sample_points) {
-    printf("Calculating medoid.. \n");
+    // printf("Calculating medoid.. \n");
     float *distance_sums = (float *)malloc(num_sample_points * sizeof(float));
 
     // Initialize the distance sums to zero
@@ -708,7 +708,7 @@ int calculate_medoid(Graph *graph, int *sample_point_indexes, int num_sample_poi
 
     // Free the allocated memory
     free(distance_sums);
-    printf("Medoid Done\n");
+    // printf("Medoid Done\n");
 
     // Return the index of the medoid in the original graph
     return sample_point_indexes[medoid_index];
@@ -723,7 +723,7 @@ int calculate_medoid(Graph *graph, int *sample_point_indexes, int num_sample_poi
  * @return An array of indices representing the sampled point indexes or NULL if an error occurs
  */
 int* sample_points(Graph graph, int num_sample_points) {
-    printf("Guthering samples for medoid..\n");
+    // printf("Guthering samples for medoid..\n");
     int *sample_point_indexes = (int *)calloc(num_sample_points, sizeof(int));
 
     if( num_sample_points > graph.num_points) {
@@ -749,7 +749,7 @@ int* sample_points(Graph graph, int num_sample_points) {
     for (int i = 0; i < num_sample_points; i++) {
         sample_point_indexes[i] = indices[i];
     }
-    printf(" Sampling Done\n");
+    // printf(" Sampling Done\n");
 
     return sample_point_indexes;
 }
@@ -932,7 +932,7 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filte
  * @return A pointer to the newly created graph
  */
 Graph create_random_graph(DatasetInfo dataset, int base_num_dimensions, int max_edges) {
-    printf("Creating Random graph.. \n");
+    // printf("Creating Random graph.. \n");
     int base_num_points = dataset.num_vectors;
     Graph graph;
     graph.points = (Point*)malloc(base_num_points * sizeof(Point));
@@ -990,7 +990,7 @@ Graph create_random_graph(DatasetInfo dataset, int base_num_dimensions, int max_
         // }
 
     }
-    printf(" Graph Done\n");
+    // printf(" Graph Done\n");
 
     return graph;
 }
@@ -1256,7 +1256,7 @@ Graph vamana_indexing(DatasetInfo dataset, int L, float a, int R) {
         s_index = rand() % graph.num_points;
         if (!shuffled_point_indexes[s_index]) {
             shuffled_point_indexes[s_index] = true;
-            printf("Indexing graph %d point %d | %d / %d\n", graph.points[s_index].category, s_index, i, graph.num_points);
+            // printf("Indexing graph %d point %d | %d / %d\n", graph.points[s_index].category, s_index, i, graph.num_points);
 
             // =============== GREEDY SEARCH ================ //
             greedy_search(&graph, graph.points[s_index].coordinates, medoid_index, &V, &V_size, &lamda, &lamda_size, L);

@@ -13,6 +13,18 @@ int main(int argc, char *argv[]) {
 
     // Get the current time
     time_t t = time(NULL);
+    char *filename = "results.txt";
+
+    // Open/create the file
+    FILE *resultFile = fopen(filename, "a");
+    if (!resultFile) {
+        perror("Error opening file");
+        exit(1);
+    }
+    fseek(resultFile, 0, SEEK_END);
+    fprintf(resultFile,"---------------------------------------------\n");
+
+    fprintf(resultFile, "Starting indexing\n");
 
     // Seed the random number generator with the current time
     srand((unsigned int)t);
@@ -51,8 +63,8 @@ int main(int argc, char *argv[]) {
     }
 
     printf("\nbase_file = %s | L = %d | a = %f | R = %d | threads = %d\n", base_file_name, L, a, R, numOfThreads);
+    fprintf(resultFile,"\nbase_file = %s | L = %d | a = %f | R = %d | threads = %d\n", base_file_name, L, a, R, numOfThreads);
     printf("---------------------------------------------\n");
-
 
     DatasetInfo* dataSet;
     dataSet = read_dataset(base_file_name);
@@ -64,13 +76,13 @@ int main(int argc, char *argv[]) {
 
     double startVamana = get_current_time();
 
-    graph = threadStitchedVamanaIndexing(dataSet, L, a, Rsmall, numOfThreads);
+    graph = threadStitchedVamanaIndexing(dataSet, L, a, Rsmall, numOfThreads, resultFile);
     printf("---------------------------------------------\n");
     double time_vamana = get_elapsed_time(startVamana);
 
     char graph_file_name[100]; // Ensure this is large enough
     snprintf(graph_file_name, sizeof(graph_file_name), "%s_R%d_L%d_a%.2f_#%d.bin", 
-            "stitchedGraph", R, L, a, dataSet->num_vectors);
+            "graphs/stitchedGraph", R, L, a, dataSet->num_vectors);
 
     writeGraphs(graph, num_of_graphs, graph_file_name);
 
@@ -78,8 +90,11 @@ int main(int argc, char *argv[]) {
         free_graph(graph[i]);
     }
     printf("Time taken to index all graphs %.2f seconds\n", time_vamana);
+    fprintf(resultFile,"Time taken to index all graphs %.2f seconds\n", time_vamana);
+    fprintf(resultFile,"---------------------------------------------\n");
     free(graph);
     free_dataset(dataSet);
     printf("Exiting program\n");
+    fclose(resultFile);
     return 0;
 }
