@@ -10,7 +10,7 @@
 #define INF 1e9         // A large number to represent "infinity"
 
 // Function prototypes
-double squared_euclidean_distance(float *p, float *q, int n);
+float squared_euclidean_distance(float *p, float *q, int n);
 
 Graph initialise_graph(DatasetInfo* dataset, int max_edges);
 void free_graph(Graph graph);
