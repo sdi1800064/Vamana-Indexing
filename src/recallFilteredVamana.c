@@ -120,9 +120,6 @@ int main(int argc, char *argv[]) {
     }
 
     //Check if the file exists,if it does not create it and write the data else read the data
-    char new_groundtruth_file_name[100];
-    sprintf(new_groundtruth_file_name, "%s%s%d%s", graph_file_name, "_R", R, ".bin");
-
 
     Graph filteredVamanaGraph;
     // Check if the file exists
@@ -137,7 +134,6 @@ int main(int argc, char *argv[]) {
         printf("Time to create Filtered graph: %.3f seconds\n", time_vamana);
         writeVamanaGraph(&filteredVamanaGraph, graph_file_name);
     }
-
 
 
     // ============ RECALL AFTER VAMANA INDEXING ============= //
