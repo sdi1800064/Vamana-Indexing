@@ -631,8 +631,15 @@ int calculate_medoid(Graph *graph, int *sample_point_indexes, int num_sample_poi
 
 
     // Loop through all pairs of sampled points and calculate the pairwise distances
+    clock_t start_time, end_time;
+    double time_taken;
+
+    // Loop through all pairs of sampled points and calculate the pairwise distances
     for (int i = 0; i < num_sample_points; i++) {
+        start_time = clock(); // Start timing
+
         Point *point_i = &graph->points[sample_point_indexes[i]];
+
         for (int j = 0; j < num_sample_points; j++) {
             if (i != j) {
                 Point *point_j = &graph->points[sample_point_indexes[j]];
@@ -640,6 +647,10 @@ int calculate_medoid(Graph *graph, int *sample_point_indexes, int num_sample_poi
                 distance_sums[i] += dist;
             }
         }
+
+        end_time = clock(); // End timing
+        time_taken = ((double)(end_time - start_time)) / CLOCKS_PER_SEC; // Calculate time taken
+     //   printf("Iteration %d took %f seconds\n", i, time_taken); // Print time taken
     }
 
     // Find the point with the smallest sum of distances (i.e., the medoid)
@@ -750,12 +761,14 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filte
 
     // Calculating the medoid
     // ======= CHANGE THE PERCENTAGE OF THE SAMPLES HERE ======== //
-    int percentage = 1;
+    int percentage = 1000;
     // ========================================================== //
 
     int num_sample_points = graph.num_points / percentage;
     int *sample_point_indexes = sample_points(graph, num_sample_points);
+    printf("before medoid\n");
     int medoid_index = calculate_medoid(&graph, sample_point_indexes, num_sample_points);
+    printf("medoid index %d\n", medoid_index);
     FilteredMethoidList* filteredMedoids = get_filtered_medoids(&graph, &num_sample_points, filterinfo);
     graph.filteredMedoids = *filteredMedoids;
     graph.medoid = medoid_index;
@@ -771,6 +784,7 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filte
 
     i=0;
     while(i < graph.num_points) {
+       printf("count i  %d\n", i);
         s_index = rand() % graph.num_points;
         if (!shuffled_point_indexes[s_index]) {
             /**
@@ -836,6 +850,7 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filte
                     addEdge(P_PRIME, s_index);
                 }
             }
+
             // Traversed to another point of the graph
             i++;
             free(V);
@@ -1152,10 +1167,8 @@ Graph vamana_indexing(DatasetInfo dataset, int L, float a, int R) {
         printf("Error: sample_points returned NULL\n");
         exit(1);
     }
-
     int medoid_index = calculate_medoid(&graph, sample_point_indexes, num_sample_points);       // Position in the graph
     // int temp_medoid_index = graph.points[medoid_index].index;                                   // Actual index
-
     // traverse the graph in a random way without repetitions
     bool *shuffled_point_indexes = (bool *)calloc(graph.num_points, sizeof(bool));
     int s_index;
@@ -1232,7 +1245,7 @@ FilteredMethoidList * get_filtered_medoids(Graph *graph, int *t, filterInfo *fil
     }
 
     int *current_position = (int *)calloc(filterInfo->num_filters, sizeof(int));
-
+    printf("split the data into categories\n");
     for (int i = 0; i < graph->num_points; i++) {
         int category = graph->points[i].category;
         for (int j = 0; j < filterInfo->num_filters; j++) {
@@ -1242,6 +1255,7 @@ FilteredMethoidList * get_filtered_medoids(Graph *graph, int *t, filterInfo *fil
             }
         }
     }
+    printf("split the data into categories done\n");
 
     free(current_position);
 
@@ -1286,6 +1300,7 @@ FilteredMedoid* findClosestDataPoints(Point **groupedData, filterInfo *filterInf
     srand(time(NULL)); // Seed for random permutation
 
     for (int cat = 0; cat < numCategories; cat++) {
+        printf("i am in finding the category %d from a total %d with number of elements %d\n", cat,numCategories,filterInfo->filtersPoints[cat].count);
         int groupSize = filterInfo->filtersPoints[cat].count;
         if (groupSize == 0) continue;
 
@@ -1299,6 +1314,7 @@ FilteredMedoid* findClosestDataPoints(Point **groupedData, filterInfo *filterInf
         // Adjust the permutation size to be the minimum of `groupSize` and `t`
         int permSize = groupSize < t ? groupSize : t;
 
+        printf("permSize %d\n", permSize);
         int *randomPermutation = malloc(permSize * sizeof(int));
         generate_random_permutation(randomPermutation, permSize);
 
