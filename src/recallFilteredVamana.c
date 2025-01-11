@@ -19,6 +19,9 @@ int main(int argc, char *argv[]) {
     // Initialize variables
     char *base_file_name = NULL;
     char *graph_file_name = NULL;
+
+    // Code to create the graph
+
     char *query_file_name = NULL;
     char *groundtruth_file_name = NULL;
     int k = -1;
@@ -123,16 +126,16 @@ int main(int argc, char *argv[]) {
 
     Graph filteredVamanaGraph;
     // Check if the file exists
-    if (access(new_groundtruth_file_name, F_OK) != -1) {
+    if (access(graph_file_name, F_OK) != -1) {
         // File exists, read the data
-        filteredVamanaGraph = *readGraph(new_groundtruth_file_name);
+        filteredVamanaGraph = *readGraph(graph_file_name);
     } else {
         time_t start_vamana = time(NULL);
         filteredVamanaGraph = filtered_vamana_indexing(dataSet, L,a,R,&(dataSet->filterInfo));
         time_t end_vamana = time(NULL);
         double time_vamana = difftime(end_vamana, start_vamana);
         printf("Time to create Filtered graph: %.3f seconds\n", time_vamana);
-        writeVamanaGraph(&filteredVamanaGraph, new_groundtruth_file_name);
+        writeVamanaGraph(&filteredVamanaGraph, graph_file_name);
     }
 
 

@@ -206,13 +206,14 @@ int edgeExists(Point *point, int toIndex) {
  */
 int filtered_Robust_prune(Graph *graph, int p_index, int *V, int V_size, float a, int R) {
 
+    int toIndex;
     if(V_size == 0) {
         return 0;
     }
 
     // add to V all the neighbors of p and remove p from v if it exists
     for (int i = 0; i < graph->points[p_index].edge_count; i++) {
-        int toIndex = graph->points[p_index].edges[i];
+         toIndex = graph->points[p_index].edges[i];
         // Add to V all the neighbors of p
         if (!arrayContains(V, V_size, toIndex)) {
             add_to_dynamic_array(&V, &V_size, toIndex);
@@ -551,6 +552,8 @@ void filtered_greedy_search(Graph *graph, float *Xq, int* start_index, int start
         }
         
         // Update Lamda_minus_V
+        free(Lamda_minus_V);
+        Lamda_minus_V = NULL;
         Lamda_minus_V = get_the_difference(*Lamda, *Lamda_size, *V, *V_size, &Lamda_minus_V_size); 
     }
     free(Lamda_minus_V);
@@ -826,6 +829,7 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filte
 
                     // run robustPrune(p', new_V, a, R)
                     filtered_Robust_prune(&graph, P_PRIME->index, new_V, new_V_size, a, R);
+                    free(new_V);
                     
                 } else{
                     // else add to neighbors of p' the random point
@@ -834,7 +838,8 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filte
             }
             // Traversed to another point of the graph
             i++;
-
+            free(V);
+            free(lamda);
             V = NULL;
             V_size = 0;
             lamda = NULL;
