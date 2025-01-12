@@ -566,3 +566,15 @@ Average query time: 0.147 seconds
 Max query time: 0.807 seconds
 Min query time: 0.000 seconds
 ---------------------------------------------
+---------------------------------------------
+Starting indexing
+
+base_file = testSets/contest-data-release-1m.bin | L = 120 | a = 1.200000 | R = 60 | threads = 6
+Thread 1 / 6 -> #Filters = 1 | min_time=1216.04 | max_time=1216.04 | avg_time=1216.04 | total_time_taken=1216.04 |
+Thread 2 / 6 -> #Filters = 284 | min_time=0.00 | max_time=292.29 | avg_time=2.22 | total_time_taken=631.27 |
+Thread 3 / 6 -> #Filters = 292 | min_time=0.00 | max_time=575.19 | avg_time=2.15 | total_time_taken=626.98 |
+Thread 4 / 6 -> #Filters = 261 | min_time=0.00 | max_time=233.41 | avg_time=2.34 | total_time_taken=609.67 |
+Thread 5 / 6 -> #Filters = 303 | min_time=0.00 | max_time=389.88 | avg_time=2.00 | total_time_taken=605.72 |
+Thread 6 / 6 -> #Filters = 1 | min_time=1912.81 | max_time=1912.81 | avg_time=1912.81 | total_time_taken=1912.81 |
+Time taken to index all graphs 1912.81 seconds
+---------------------------------------------
