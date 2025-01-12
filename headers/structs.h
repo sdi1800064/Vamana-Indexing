@@ -80,6 +80,29 @@ typedef struct  {
     int filter_Category;
 }PointsPerFilter;
 
+
+typedef struct {
+    // The parameters you need for do_work:
+    int L;
+    float a;
+    int R;
+    Graph *graph;
+    int medoid_index;
+    FilteredMethoidList *filteredMedoids;
+
+    // The array of per-filter subsets
+    PointsPerFilter *pointsPerFilterArray;
+
+    // How many filters total?
+    int num_filters;
+
+    // Current filter index (which filter to process next)
+    int current_idx;
+
+    // A mutex to protect current_idx
+    pthread_mutex_t lock;
+} ParallelData;
+
 // ==================== Structures ==================== //
 
 

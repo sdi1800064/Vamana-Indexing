@@ -61,5 +61,6 @@ void check_for_duplicates(int *array, int size);
 void generate_random_permutation(int *perm, int n);
 
 Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filterInfo *filterinfo);
+void *worker_thread(void *arg);
 
 #endif

@@ -6,6 +6,7 @@
 #include <string.h>
 #include <time.h>
 #include <immintrin.h>  // for AVX intrinsics
+#include <pthread.h>
 
 #include "../headers/graph.h"
 #include "../headers/dataset.h"
@@ -782,7 +783,93 @@ void check_for_duplicates(int *array, int size) {
 }
 
 
+void do_work(int L, float a, int R, Graph graph, int medoid_index, FilteredMethoidList *filteredMedoids, PointsPerFilter *pointsPerFilter) {
+    int i = 0;
+    int s_index;
+    int* V = NULL;
+    int *lamda = NULL;
+    int lamda_size = 0;
+    int V_size = 0;
 
+    while(i < pointsPerFilter->num_points) {
+        printf("count i  %d\n", i);
+        s_index = pointsPerFilter->points[i];
+        /**
+             * Finds the medoid from the filtered medoids that is in the same category as the given datapoint.
+             * If the datapoint does not have a category, it returns the global medoid.
+             *
+             * @param filteredMedoids The list of filtered medoids.
+             * @param datapoint The datapoint to find the medoid for.
+             * @param medoid_index The global medoid index.
+             * @return The index of the medoid in the same category as the datapoint, or the global medoid index if no category.
+             */
+
+        // printf("Indexing point %d\n", s_index);
+
+        // Set as the starting index the node that is at the starting_points[category]
+        int F_Fx_si = find_medoid_for_point(filteredMedoids, &graph.points[s_index], medoid_index);
+        //            int *S_Fx_si = malloc(sizeof(int));
+        //            S_Fx_si[0] = graph->points[F_Fx_si];
+        int sp_size = 1;
+
+        // =============== GREEDY SEARCH ================ //
+        filtered_greedy_search(&graph, graph.points[s_index].coordinates, &F_Fx_si, sp_size, &V, &V_size, &lamda, &lamda_size, L, graph.points[s_index].category);
+
+        //            printf("Edges of point %d", s_index);
+        //            for (int i = 0; i < graph.points[s_index].edge_count; i++) {
+        //                printf("Edge %d : ", graph.points[s_index].edges[i] );
+        //            }
+        // =============== ROBUST PRUNE ================ //
+        filtered_Robust_prune(&graph, s_index, V, V_size, a, R);
+
+        //            for (int i = 0; i < graph.points[s_index].edge_count; i++) {
+        //                printf("Edge %d : ", graph.points[s_index].edges[i] );
+        //            }
+
+        int *new_V = NULL;
+        int new_V_size = 0;
+
+        // for every neighbor of random point p'
+        for(int j = 0; j < graph.points[s_index].edge_count; j++) {
+
+            // if | neighbor(p') U random point | > R then
+            Point *P_PRIME = &graph.points[graph.points[s_index].edges[j]];
+
+            if(P_PRIME->edge_count + 1 > R) {
+                // run robustPrune(p', Neighbors of p' U random point, a, R)
+                // create a new visited list that contains only the neighbors of p' and the random point
+                new_V = NULL;
+                new_V = (int *)malloc((P_PRIME->edge_count + 1) * sizeof(int));
+                new_V_size = 0;
+                for (int k = 0; k < P_PRIME->edge_count; k++) {
+                    if (!arrayContains(new_V, new_V_size, P_PRIME->edges[k])) {
+                        add_to_dynamic_array(&new_V, &new_V_size, P_PRIME->edges[k]);
+                    }
+                }
+                add_to_dynamic_array(&new_V, &new_V_size, s_index);
+
+                // run robustPrune(p', new_V, a, R)
+                filtered_Robust_prune(&graph, P_PRIME->index, new_V, new_V_size, a, R);
+                free(new_V);
+
+            } else{
+                // else add to neighbors of p' the random point
+                addEdge(P_PRIME, s_index);
+            }
+        }
+
+        // Traversed to another point of the graph
+        i++;
+        free(V);
+        free(lamda);
+        V = NULL;
+        V_size = 0;
+        lamda = NULL;
+        lamda_size = 0;
+    }
+    free(V);
+    free(lamda);
+}
 
 /**
  * Performs Vamana indexing on a given graph to optimize its structure.
@@ -829,6 +916,10 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filte
 
 
     PointsPerFilter * pointsPerFilterArray = (PointsPerFilter *)malloc(sizeof(PointsPerFilter) * filterinfo->num_filters);
+    for (int i = 0; i < filterinfo->num_filters; i++) {
+        pointsPerFilterArray[i].points = (int *)malloc(graph.num_points * sizeof(int));
+        pointsPerFilterArray[i].num_points = 0;
+    }
     for(int x=0; x<graph.num_points; x++) {
         int category = graph.points[x].category;
         if(category != -1) {
@@ -849,97 +940,48 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filte
         }
     }
 
-    int sizerandpom = graph.num_points;
+    printf("i will start the parallel section\n");
+    ParallelData pd;
+    pd.L = L;
+    pd.a = a;
+    pd.R = R;
+    pd.graph = &graph;
+    pd.medoid_index = medoid_index;
+    pd.filteredMedoids = filteredMedoids;
+    pd.pointsPerFilterArray = pointsPerFilterArray;
+    pd.num_filters = filterinfo->num_filters;
+    pd.current_idx = 0;
+    pthread_mutex_init(&pd.lock, NULL);
 
-    for (int x= 0; x<=filterinfo->num_filters;x++) {
-        auto pointPerFilter = pointsPerFilterArray[x];
+    // Create exactly 4 threads
+    const int NUM_THREADS = 4;
+    pthread_t threads[NUM_THREADS];
 
-        int i = 0;
-        int s_index;
-        int* V = NULL;
-        int *lamda = NULL;
-        int lamda_size = 0;
-        int V_size = 0;
-
-        while(i < pointPerFilter.num_points) {
-            printf("count i  %d\n", i);
-            s_index = pointsPerFilterArray[x].points[i];
-            /**
-             * Finds the medoid from the filtered medoids that is in the same category as the given datapoint.
-             * If the datapoint does not have a category, it returns the global medoid.
-             *
-             * @param filteredMedoids The list of filtered medoids.
-             * @param datapoint The datapoint to find the medoid for.
-             * @param medoid_index The global medoid index.
-             * @return The index of the medoid in the same category as the datapoint, or the global medoid index if no category.
-             */
-
-            // printf("Indexing point %d\n", s_index);
-
-            // Set as the starting index the node that is at the starting_points[category]
-            int F_Fx_si = find_medoid_for_point(filteredMedoids, &graph.points[s_index], medoid_index);
-            //            int *S_Fx_si = malloc(sizeof(int));
-            //            S_Fx_si[0] = graph->points[F_Fx_si];
-            int sp_size = 1;
-
-            // =============== GREEDY SEARCH ================ //
-            filtered_greedy_search(&graph, graph.points[s_index].coordinates, &F_Fx_si, sp_size, &V, &V_size, &lamda, &lamda_size, L, graph.points[s_index].category);
-
-            //            printf("Edges of point %d", s_index);
-            //            for (int i = 0; i < graph.points[s_index].edge_count; i++) {
-            //                printf("Edge %d : ", graph.points[s_index].edges[i] );
-            //            }
-            // =============== ROBUST PRUNE ================ //
-            filtered_Robust_prune(&graph, s_index, V, V_size, a, R);
-
-            //            for (int i = 0; i < graph.points[s_index].edge_count; i++) {
-            //                printf("Edge %d : ", graph.points[s_index].edges[i] );
-            //            }
-
-            int *new_V = NULL;
-            int new_V_size = 0;
-
-            // for every neighbor of random point p'
-            for(int j = 0; j < graph.points[s_index].edge_count; j++) {
-
-                // if | neighbor(p') U random point | > R then
-                Point *P_PRIME = &graph.points[graph.points[s_index].edges[j]];
-
-                if(P_PRIME->edge_count + 1 > R) {
-                    // run robustPrune(p', Neighbors of p' U random point, a, R)
-                    // create a new visited list that contains only the neighbors of p' and the random point
-                    new_V = NULL;
-                    new_V = (int *)malloc((P_PRIME->edge_count + 1) * sizeof(int));
-                    new_V_size = 0;
-                    for (int k = 0; k < P_PRIME->edge_count; k++) {
-                        if (!arrayContains(new_V, new_V_size, P_PRIME->edges[k])) {
-                            add_to_dynamic_array(&new_V, &new_V_size, P_PRIME->edges[k]);
-                        }
-                    }
-                    add_to_dynamic_array(&new_V, &new_V_size, s_index);
-
-                    // run robustPrune(p', new_V, a, R)
-                    filtered_Robust_prune(&graph, P_PRIME->index, new_V, new_V_size, a, R);
-                    free(new_V);
-
-                } else{
-                    // else add to neighbors of p' the random point
-                    addEdge(P_PRIME, s_index);
-                }
-            }
-
-            // Traversed to another point of the graph
-            i++;
-            free(V);
-            free(lamda);
-            V = NULL;
-            V_size = 0;
-            lamda = NULL;
-            lamda_size = 0;
-        }
-        free(V);
-        free(lamda);
+    // Launch them
+    for (int i = 0; i < NUM_THREADS; i++) {
+        pthread_create(&threads[i], NULL, worker_thread, &pd);
     }
+
+    // Join them
+    for (int i = 0; i < NUM_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    pthread_mutex_destroy(&pd.lock);
+
+    // ================================
+    // End of parallel section
+    // ================================
+
+    // At this point, all filters have been processed by do_work(...)
+
+    // Free allocations if desired
+    free(random_permutation);
+    for (int i = 0; i < filterinfo->num_filters; i++) {
+        free(pointsPerFilterArray[i].points);
+    }
+    free(pointsPerFilterArray);
+
 
 
 
@@ -1567,4 +1609,33 @@ Graph* stitched_vamana_indexing(DatasetInfo* dataset, int L_small, float a, int 
 // }
 
 // ============= END Functions that can be used if we have multiple filters ============= //
+void *worker_thread(void *arg)
+{
+    ParallelData *pd = (ParallelData *)arg;
 
+    while (true) {
+        // 1. Lock the mutex to safely increment current_idx
+        pthread_mutex_lock(&pd->lock);
+
+        int x = pd->current_idx;
+        if (x >= pd->num_filters) {
+            // No more filters to process
+            pthread_mutex_unlock(&pd->lock);
+            break;
+        }
+        pd->current_idx++; // increment so next thread sees the next filter
+        pthread_mutex_unlock(&pd->lock);
+
+        // 2. We have a valid filter index
+        PointsPerFilter pointPerFilter = pd->pointsPerFilterArray[x];
+
+        // 3. Call your do_work(...) function
+        do_work(pd->L, pd->a, pd->R,
+                *(pd->graph),           // pass by value if do_work(...) takes Graph graph
+                pd->medoid_index,
+                pd->filteredMedoids,
+                &pointPerFilter);
+    }
+
+    return NULL;
+}

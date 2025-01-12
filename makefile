@@ -32,13 +32,13 @@ OBJ_FILES := $(SRC_FILES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 # Executable name
 
 # Compiler flags (for normal build)
-CFLAGS = -mavx2 -O3 -I$(HEADER_DIR) -Wall -Wextra
+CFLAGS = -mavx2 -O3 -I$(HEADER_DIR) -Wall -Wextra -pthread
 
 # Compiler flags for debug build (-g for debug info, -O0 to disable optimization)
-DEBUG_FLAGS = -I$(HEADER_DIR) -Wall -Wextra -g -O0
+DEBUG_FLAGS = -I$(HEADER_DIR) -Wall -Wextra -g -O0 -pthread
 
 # Linker flags (include -lm to link the math library)
-LDFLAGS = -lcheck -lsubunit -lm
+LDFLAGS = -lcheck -lsubunit -lm -pthread
 
 # Default rule (normal build)
 all: $(EXEC)
