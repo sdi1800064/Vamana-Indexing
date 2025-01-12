@@ -176,7 +176,7 @@ Graph* threadStitchedVamanaIndexing(DatasetInfo* dataset, int L_small, float a, 
             ++threadFilterCount[min_thread];
 
             // Up the load
-            if(dataset->filterInfo.filtersPoints[i].count > 500){
+            if(dataset->filterInfo.filtersPoints[i].count > (int)(dataset->filterInfo.filtersPoints[i].count * 0.005)){
                 int loadCount = (int)ceil(2.5 * dataset->filterInfo.filtersPoints[i].count);
                 threadLoad[min_thread] += loadCount;    
             }else{
