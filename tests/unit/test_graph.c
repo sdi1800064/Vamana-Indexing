@@ -12,6 +12,7 @@ START_TEST(test_initialise_graph)
     for (int i = 0; i < dataset.num_vectors; i++) {
         dataset.datapoints[i].category = i;
         dataset.datapoints[i].point_index = i;
+        dataset.datapoints[i].vectors = (float *)malloc(100 * sizeof(float));
         for (int j = 0; j < 100; j++) {
             dataset.datapoints[i].vectors[j] = j * 0.1;
         }
@@ -125,6 +126,7 @@ START_TEST(test_sort_array)
     for (int i = 0; i < 10; i++) {
         dataset.datapoints[i].category = i;
         dataset.datapoints[i].point_index = i;
+        dataset.datapoints[i].vectors = (float *)malloc(100 * sizeof(float));
         for (int j = 0; j < 100; j++) {
             dataset.datapoints[i].vectors[j] = j * i * 0.1;
         }
@@ -164,6 +166,7 @@ START_TEST(test_sort_array_based_on_dataset)
     for (int i = 0; i < 10; i++) {
         dataset.datapoints[i].category = i;
         dataset.datapoints[i].point_index = i;
+        dataset.datapoints[i].vectors = (float *)malloc(100 * sizeof(float));
         for (int j = 0; j < 100; j++) {
             dataset.datapoints[i].vectors[j] = j * 0.1;
         }
