@@ -2,6 +2,7 @@
 #define STRUCTS_H
 
 #include <stdint.h>
+#include <pthread.h>
 
 // ==================== Structures ==================== //
 

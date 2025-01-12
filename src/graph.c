@@ -1334,13 +1334,6 @@ Graph vamana_indexing(DatasetInfo dataset, int L, float a, int R) {
         medoid_index = rand() % graph.num_points;                                   // Random index
     }
 
-    int num_sample_points = graph.num_points / percentage;
-    int *sample_point_indexes = sample_points(graph, num_sample_points);
-    if(sample_point_indexes == NULL) {
-        printf("Error: sample_points returned NULL\n");
-        exit(1);
-    }
-    int medoid_index = calculate_medoid(&graph, sample_point_indexes, num_sample_points);       // Position in the graph
     // int temp_medoid_index = graph.points[medoid_index].index;                                   // Actual index
     // traverse the graph in a random way without repetitions
     bool *shuffled_point_indexes = (bool *)calloc(graph.num_points, sizeof(bool));
