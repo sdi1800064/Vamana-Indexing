@@ -418,3 +418,151 @@ Average query time: 0.130 seconds
 Max query time: 0.582 seconds
 Min query time: 0.000 seconds
 ---------------------------------------------
+---------------------------------------------
+Starting indexing
+
+base_file = testSets/dummy-data.bin | L = 120 | a = 1.200000 | R = 60 | threads = 7
+Thread 1 / 7 -> #Filters = 1 | min_time=7.99 | max_time=7.99 | avg_time=7.99 | total_time_taken=7.99 |
+Thread 2 / 7 -> #Filters = 1 | min_time=13.11 | max_time=13.11 | avg_time=13.11 | total_time_taken=13.11 |
+Thread 3 / 7 -> #Filters = 1 | min_time=2.89 | max_time=2.89 | avg_time=2.89 | total_time_taken=2.89 |
+Thread 4 / 7 -> #Filters = 27 | min_time=0.00 | max_time=1.83 | avg_time=0.07 | total_time_taken=1.99 |
+Thread 5 / 7 -> #Filters = 58 | min_time=0.00 | max_time=1.65 | avg_time=0.04 | total_time_taken=2.57 |
+Thread 6 / 7 -> #Filters = 40 | min_time=0.00 | max_time=1.80 | avg_time=0.06 | total_time_taken=2.44 |
+Thread 7 / 7 -> #Filters = 1 | min_time=3.23 | max_time=3.23 | avg_time=3.23 | total_time_taken=3.23 |
+Time taken to index all graphs 13.12 seconds
+---------------------------------------------
+---------------------------------------------
+Starting recall
+baseFile = testSets/dummy-data.bin || queryFile = testSets/dummy-queries.bin || groundTruthFile = testSets/groundtruth.ivecs
+k = 100 || L = 120 || a = 1.200000 || R = 60 || t = 7
+Calculating recall: Done.
+Time taken: 61.956 seconds
+Found 460888 / 469713
+Recall: 98.121%
+Average query time: 0.006 seconds
+Max query time: 0.030 seconds
+Min query time: 0.000 seconds
+---------------------------------------------
+---------------------------------------------
+Starting indexing
+
+base_file = testSets/dummy-data.bin | L = 200 | a = 1.200000 | R = 20 | threads = 7
+Thread 1 / 7 -> #Filters = 1 | min_time=21.97 | max_time=21.97 | avg_time=21.97 | total_time_taken=21.97 |
+Thread 2 / 7 -> #Filters = 1 | min_time=34.43 | max_time=34.43 | avg_time=34.43 | total_time_taken=34.43 |
+Thread 3 / 7 -> #Filters = 1 | min_time=8.04 | max_time=8.04 | avg_time=8.04 | total_time_taken=8.04 |
+Thread 4 / 7 -> #Filters = 27 | min_time=0.00 | max_time=5.40 | avg_time=0.21 | total_time_taken=5.68 |
+Thread 5 / 7 -> #Filters = 58 | min_time=0.00 | max_time=3.71 | avg_time=0.08 | total_time_taken=4.79 |
+Thread 6 / 7 -> #Filters = 40 | min_time=0.00 | max_time=6.14 | avg_time=0.17 | total_time_taken=6.62 |
+Thread 7 / 7 -> #Filters = 1 | min_time=9.39 | max_time=9.39 | avg_time=9.39 | total_time_taken=9.39 |
+Time taken to index all graphs 34.44 seconds
+---------------------------------------------
+---------------------------------------------
+Starting recall
+baseFile = testSets/dummy-data.bin || queryFile = testSets/dummy-queries.bin || groundTruthFile = testSets/groundtruth.ivecs
+k = 100 || L = 200 || a = 1.200000 || R = 20 || t = 7
+Calculating recall: Done.
+Time taken: 131.312 seconds
+Found 456747 / 469690
+Recall: 97.244%
+Average query time: 0.013 seconds
+Max query time: 0.078 seconds
+Min query time: 0.000 seconds
+---------------------------------------------
+---------------------------------------------
+Starting indexing
+
+base_file = testSets/dummy-data.bin | L = 120 | a = 1.200000 | R = 60 | threads = 6
+Thread 1 / 6 -> #Filters = 1 | min_time=7.62 | max_time=7.62 | avg_time=7.62 | total_time_taken=7.62 |
+Thread 2 / 6 -> #Filters = 1 | min_time=12.36 | max_time=12.36 | avg_time=12.36 | total_time_taken=12.36 |
+Thread 3 / 6 -> #Filters = 1 | min_time=2.31 | max_time=2.31 | avg_time=2.31 | total_time_taken=2.31 |
+Thread 4 / 6 -> #Filters = 64 | min_time=0.00 | max_time=1.46 | avg_time=0.03 | total_time_taken=2.08 |
+Thread 5 / 6 -> #Filters = 2 | min_time=0.96 | max_time=2.56 | avg_time=1.76 | total_time_taken=3.52 |
+Thread 6 / 6 -> #Filters = 60 | min_time=0.00 | max_time=1.56 | avg_time=0.04 | total_time_taken=2.26 |
+Time taken to index all graphs 12.36 seconds
+---------------------------------------------
+---------------------------------------------
+Starting recall
+baseFile = testSets/dummy-data.bin || queryFile = testSets/dummy-queries.bin || groundTruthFile = testSets/groundtruth.ivecs
+k = 100 || L = 120 || a = 1.200000 || R = 60 || t = 6
+Calculating recall: Done.
+Time taken: 64.239 seconds
+Found 460864 / 469713
+Recall: 98.116%
+Average query time: 0.006 seconds
+Max query time: 0.029 seconds
+Min query time: 0.000 seconds
+---------------------------------------------
+---------------------------------------------
+Starting indexing
+
+base_file = testSets/dummy-data.bin | L = 200 | a = 1.200000 | R = 20 | threads = 6
+Thread 1 / 6 -> #Filters = 1 | min_time=17.77 | max_time=17.77 | avg_time=17.77 | total_time_taken=17.77 |
+Thread 2 / 6 -> #Filters = 1 | min_time=29.64 | max_time=29.64 | avg_time=29.64 | total_time_taken=29.64 |
+Thread 3 / 6 -> #Filters = 1 | min_time=6.02 | max_time=6.02 | avg_time=6.02 | total_time_taken=6.02 |
+Thread 4 / 6 -> #Filters = 64 | min_time=0.00 | max_time=4.43 | avg_time=0.08 | total_time_taken=5.02 |
+Thread 5 / 6 -> #Filters = 2 | min_time=2.96 | max_time=6.62 | avg_time=4.79 | total_time_taken=9.58 |
+Thread 6 / 6 -> #Filters = 60 | min_time=0.00 | max_time=4.18 | avg_time=0.09 | total_time_taken=5.19 |
+Time taken to index all graphs 29.64 seconds
+---------------------------------------------
+---------------------------------------------
+Starting recall
+baseFile = testSets/dummy-data.bin || queryFile = testSets/dummy-queries.bin || groundTruthFile = testSets/groundtruth.ivecs
+k = 100 || L = 200 || a = 1.200000 || R = 20 || t = 6
+Calculating recall: Done.
+Time taken: 133.854 seconds
+Found 456843 / 469713
+Recall: 97.260%
+Average query time: 0.013 seconds
+Max query time: 0.070 seconds
+Min query time: 0.000 seconds
+---------------------------------------------
+---------------------------------------------
+Starting indexing
+
+base_file = testSets/contest-data-release-1m.bin | L = 120 | a = 1.200000 | R = 60 | threads = 7
+Thread 1 / 7 -> #Filters = 1 | min_time=1106.66 | max_time=1106.66 | avg_time=1106.66 | total_time_taken=1106.66 |
+Thread 2 / 7 -> #Filters = 278 | min_time=0.00 | max_time=293.70 | avg_time=1.76 | total_time_taken=489.77 |
+Thread 3 / 7 -> #Filters = 1 | min_time=547.55 | max_time=547.55 | avg_time=547.55 | total_time_taken=547.55 |
+Thread 4 / 7 -> #Filters = 280 | min_time=0.00 | max_time=297.77 | avg_time=1.78 | total_time_taken=498.02 |
+Thread 5 / 7 -> #Filters = 320 | min_time=0.00 | max_time=422.16 | avg_time=1.57 | total_time_taken=502.83 |
+Thread 6 / 7 -> #Filters = 1 | min_time=1757.70 | max_time=1757.70 | avg_time=1757.70 | total_time_taken=1757.70 |
+Thread 7 / 7 -> #Filters = 261 | min_time=0.00 | max_time=235.03 | avg_time=1.87 | total_time_taken=488.96 |
+Time taken to index all graphs 1757.70 seconds
+---------------------------------------------
+---------------------------------------------
+Starting recall
+baseFile = testSets/contest-data-release-1m.bin || queryFile = testSets/contest-queries-release-1m.bin || groundTruthFile = testSets/neighbors1m.ivecs
+k = 100 || L = 120 || a = 1.200000 || R = 60 || t = 7
+Calculating recall: Done.
+Time taken: 694.407 seconds
+Found 483807 / 501100
+Recall: 96.549%
+Average query time: 0.069 seconds
+Max query time: 0.507 seconds
+Min query time: 0.000 seconds
+---------------------------------------------
+---------------------------------------------
+Starting indexing
+
+base_file = testSets/contest-data-release-1m.bin | L = 200 | a = 1.200000 | R = 20 | threads = 7
+Thread 1 / 7 -> #Filters = 1 | min_time=2619.36 | max_time=2619.36 | avg_time=2619.36 | total_time_taken=2619.36 |
+Thread 2 / 7 -> #Filters = 278 | min_time=0.00 | max_time=731.64 | avg_time=4.37 | total_time_taken=1215.63 |
+Thread 3 / 7 -> #Filters = 1 | min_time=1337.64 | max_time=1337.64 | avg_time=1337.64 | total_time_taken=1337.64 |
+Thread 4 / 7 -> #Filters = 280 | min_time=0.00 | max_time=698.88 | avg_time=4.40 | total_time_taken=1230.80 |
+Thread 5 / 7 -> #Filters = 320 | min_time=0.00 | max_time=1010.01 | avg_time=3.84 | total_time_taken=1229.22 |
+Thread 6 / 7 -> #Filters = 1 | min_time=4164.58 | max_time=4164.58 | avg_time=4164.58 | total_time_taken=4164.58 |
+Thread 7 / 7 -> #Filters = 261 | min_time=0.00 | max_time=563.28 | avg_time=4.61 | total_time_taken=1203.03 |
+Time taken to index all graphs 4164.58 seconds
+---------------------------------------------
+---------------------------------------------
+Starting recall
+baseFile = testSets/contest-data-release-1m.bin || queryFile = testSets/contest-queries-release-1m.bin || groundTruthFile = testSets/neighbors1m.ivecs
+k = 100 || L = 200 || a = 1.200000 || R = 20 || t = 7
+Calculating recall: Done.
+Time taken: 1469.952 seconds
+Found 465609 / 501100
+Recall: 92.917%
+Average query time: 0.147 seconds
+Max query time: 0.807 seconds
+Min query time: 0.000 seconds
+---------------------------------------------
