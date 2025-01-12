@@ -53,8 +53,8 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(OBJ_DIR) # Create obj directory if it doesn't exist
 	$(CC) $(CFLAGS) -c $< -o $@
 
-recalls: $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/recallStitchedVamana.c 
-	$(CC) -o recallSticthedVamana $(SRC_DIR)/dataset.c $(SRC_DIR)/threadFunctions.c $(SRC_DIR)/graph.c $(SRC_DIR)/recallStitchedVamana.c $(SRC_DIR)/recallFunctions.c $(SRC_DIR)/timeFunctions.c $(CFLAGS)
+recalls: $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/recallStitchedVamana.c
+	$(CC) -o recallStitchedVamana $(SRC_DIR)/dataset.c $(SRC_DIR)/threadFunctions.c $(SRC_DIR)/graph.c $(SRC_DIR)/recallStitchedVamana.c $(SRC_DIR)/recallFunctions.c $(SRC_DIR)/timeFunctions.c $(CFLAGS)
 
 recallf: $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/recallFilteredVamana.c
 	$(CC) -o recallFilteredVamana $(SRC_DIR)/dataset.c $(SRC_DIR)/graph.c $(SRC_DIR)/recallFilteredVamana.c $(CFLAGS)
