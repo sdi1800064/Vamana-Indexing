@@ -1497,7 +1497,7 @@ FilteredMedoid* findClosestDataPoints(Point **groupedData, filterInfo *filterInf
         // Adjust the permutation size to be the minimum of `groupSize` and `t`
         int permSize = groupSize < t ? groupSize : t;
 
-        printf("permSize %d\n", permSize);
+        //printf("permSize %d\n", permSize);
         int *randomPermutation = malloc(permSize * sizeof(int));
         generate_random_permutation(randomPermutation, permSize);
 
