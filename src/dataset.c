@@ -98,6 +98,7 @@ DatasetInfo* read_dataset(const char *filename) {
         return NULL;
     }
     dataset->num_vectors = (int)num_vectors;
+    printf("Found #%d - ", dataset->num_vectors);
     dataset->filterInfo = initialise_filters();
 
     // Allocate memory for the DataPoint array
@@ -130,6 +131,7 @@ DatasetInfo* read_dataset(const char *filename) {
         dataset->datapoints[i].point_index = i;
         dataset->datapoints[i].category = (int)buffer[0];
         dataset->datapoints[i].timestamp = buffer[1];
+        dataset->datapoints[i].vectors = (float *)malloc(100 * sizeof(float));
         for (int j = 0; j < 100; j++) {
             dataset->datapoints[i].vectors[j] = buffer[j + 2];
         }
@@ -155,13 +157,34 @@ void free_dataset(DatasetInfo *dataset) {
 }
 
 void print_dataset(DatasetInfo *dataset) {
-    for (int i = 0; i < dataset->num_vectors; i++) {
-        printf("index %d: Category = %d, Timestamp = %f, Vectors :\n ", dataset->datapoints[i].point_index, dataset->datapoints[i].category, dataset->datapoints[i].timestamp);
-        for (int j = 0; j < 100; j++) {
-            printf("%f ", dataset->datapoints[i].vectors[j]);
-        }
-        printf("\n\n");
+    FILE *file = fopen("output.txt", "w");
+    if (!file) {
+        perror("Error opening output file");
+        return;
     }
+
+    fprintf(file, "Printing all the points in order...\n");
+    for (int i = 0; i < dataset->num_vectors; i++) {
+        fprintf(file, "index %d: Category = %d, Timestamp = %f, Vectors :\n ", dataset->datapoints[i].point_index, dataset->datapoints[i].category, dataset->datapoints[i].timestamp);
+        for (int j = 0; j < 100; j++) {
+            fprintf(file, "%f ", dataset->datapoints[i].vectors[j]);
+        }
+        fprintf(file, "\n\n");
+    }
+    fprintf(file, "Printing all the filters in order...\n");
+    for(int i = 0; i < dataset->filterInfo.num_filters; i++){
+        fprintf(file, "Filter #%d | %d points\n", dataset->filterInfo.filtersPoints[i].filter_index, dataset->filterInfo.filtersPoints[i].count);
+        for(int j = 0; j < dataset->filterInfo.filtersPoints[i].count; j++){
+            int point_index = dataset->filterInfo.filtersPoints[i].point_indexes[j];
+            fprintf(file, "index %d: Category = %d, Timestamp = %f, Vectors :\n ", point_index, dataset->datapoints[point_index].category, dataset->datapoints[point_index].timestamp);
+            for (int k = 0; k < 100; k++) {
+                fprintf(file, "%f ", dataset->datapoints[point_index].vectors[k]);
+            }
+            fprintf(file, "\n\n");
+        }
+    }
+
+    fclose(file);
 }
 
 void cprint_dataset(DatasetInfo *dataset, int target_category) {
@@ -200,6 +223,7 @@ QueryInfo* read_query_dataset(const char *filename) {
         return NULL;
     }
     query_info->num_queries = (int)num_queries;
+    printf("Found #%d - ", query_info->num_queries);
 
     // Allocate memory for the QueryPoint array
     query_info->queries = (QueryPoint *)malloc(num_queries * sizeof(QueryPoint));
@@ -231,6 +255,7 @@ QueryInfo* read_query_dataset(const char *filename) {
         query_info->queries[i].v = (int)buffer[1];
         query_info->queries[i].l = buffer[2];
         query_info->queries[i].r = buffer[3];
+        query_info->queries[i].query_vector = (float *)malloc(100 * sizeof(float));
         for (size_t j = 0; j < 100; j++) {
             query_info->queries[i].query_vector[j] = buffer[j + 4];
         }
@@ -298,7 +323,7 @@ int** readGroundTruth(char* filename, int num_queries) {
 
 
 void writeGraphs(Graph* graph, int num_of_graphs, char* filename) {
-    printf("Writing graphs to file %s: ", filename);
+    printf("Writing graphs ->  %s: ", filename);
     fflush(stdout);
     FILE *file = fopen(filename, "wb");
     if (!file) {

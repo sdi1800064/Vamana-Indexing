@@ -6,14 +6,31 @@
 
 #include "../headers/dataset.h"
 #include "../headers/graph.h"
+#include "../headers/threadFunctions.h"
+#include "../headers/recallFunctions.h"
+
+#define NUM_THREADS 4
 
 int main(int argc, char *argv[]) {
 
     // Get the current time
-    time_t t = time(NULL);
+    time_t timet = time(NULL);
+    char *filename = "results.txt";
+
+    // Open/create the file
+    FILE *resultFile = fopen(filename, "a");
+    if (!resultFile) {
+        perror("Error opening file");
+        exit(1);
+    }
+    fseek(resultFile, 0, SEEK_END);
+    fprintf(resultFile,"---------------------------------------------\n");
+
+    fprintf(resultFile, "Starting recall\n");
+
 
     // Seed the random number generator with the current time
-    srand((unsigned int)t);
+    srand((unsigned int)timet);
     
     printf("Starting...\n");
     // Initialize variables
@@ -25,6 +42,7 @@ int main(int argc, char *argv[]) {
     int L = -1;
     float a = -1.0;
     int R = -1;
+    int t = -1;
 
     // Iterate through command line arguments
     for (int i = 1; i < argc; i++) {
@@ -52,23 +70,27 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "-R") == 0 && i + 1 < argc) {
             R = atoi(argv[i + 1]);
             i++;
+        } else if (strcmp(argv[i], "-t") == 0 && i + 1 < argc) {
+            t = atoi(argv[i + 1]);
+            i++;
         }
     }
 
     // Check if all required arguments are provided
-    if (!base_file_name || !graph_file_name || !query_file_name || !groundtruth_file_name || k == -1 || L == -1 || a == -1 || R == -1) {
+    if (!base_file_name || !graph_file_name || !query_file_name || !groundtruth_file_name || k == -1 || L == -1 || a == -1 || R == -1 || t == -1) {
         fprintf(stderr, "Error: Missing required arguments.\n");
-        fprintf(stderr, "Usage: %s -b base_file_name --graph graph_file_name -q query_file_name -g groundtruth_file_name -k (int k) -L (int L)\n", argv[0]);
+        fprintf(stderr, "Usage: %s -b base_file_name --graph graph_file_name -q query_file_name -g groundtruth_file_name -k (int k) -L (int L) -R (int R) -t (int t)\n", argv[0]);
         return 1;
     }
 
     if(L < k){
         fprintf(stderr, "Error: L must be greater than k.\n");
-        fprintf(stderr, "Usage: %s -b base_file_name --graph graph_file_name -q query_file_name -g groundtruth_file_name -k (int k) -L (int L)\n", argv[0]);
+        fprintf(stderr, "Usage: %s -b base_file_name --graph graph_file_name -q query_file_name -g groundtruth_file_name -k (int k) -L (int L) -R (int R) -t (int t)\n", argv[0]);
         return 1;
     }
 
-    printf("k = %d || L = %d || a = %f || R = %d\n", k, L, a, R);
+    printf("baseFile = %s || queryFile = %s || groundTruthFile = %s\nk = %d || L = %d || a = %f || R = %d || t = %d\n", base_file_name, query_file_name, groundtruth_file_name, k, L, a, R, t);
+    fprintf(resultFile, "baseFile = %s || queryFile = %s || groundTruthFile = %s\nk = %d || L = %d || a = %f || R = %d || t = %d\n", base_file_name, query_file_name, groundtruth_file_name, k, L, a, R, t);
 
     // ===================== CREATE OUTPUT FILE IF NEEDED ================== //
     // Create an output file
@@ -116,150 +138,40 @@ int main(int argc, char *argv[]) {
     Graph* stitchedGraphs;
     
     int stitchedGraphs_count = 0;
-
     char new_graph_file_name[100];
-    sprintf(new_graph_file_name, "%s%s%d%s", graph_file_name, "_R", R, ".bin");
+    snprintf(new_graph_file_name, sizeof(new_graph_file_name), "%s_R%d_L%d_a%.2f_#%d.bin", 
+            "graphs/stitchedGraph", R, L, a, dataSet->num_vectors);
+    int Rsmall = R/2;
+    if(access(graph_file_name, F_OK) == -1){
+        graph_file_name = new_graph_file_name;
+    }
 
     if (access(new_graph_file_name, F_OK) == -1) {
-        int stitchedGraphs_count = dataSet->filterInfo.num_filters;
-        int Rsmall = R/2;
+        stitchedGraphs_count = dataSet->filterInfo.num_filters;
         stitchedGraphs = (Graph *)malloc(stitchedGraphs_count * sizeof(Graph));
         time_t start_vamana = time(NULL);
-        stitchedGraphs = stitched_vamana_indexing(dataSet, L, a, Rsmall);
+        stitchedGraphs = threadStitchedVamanaIndexing(dataSet, L, a, Rsmall, NUM_THREADS, resultFile);
         time_t end_vamana = time(NULL);
         writeGraphs(stitchedGraphs, stitchedGraphs_count, new_graph_file_name);
         double time_vamana = difftime(end_vamana, start_vamana);
         printf("Time to create graphs: %.3f seconds\n", time_vamana);
     }
     stitchedGraphs = readGraphs(new_graph_file_name, &stitchedGraphs_count);
-
-
+    
     // ============ RECALL AFTER VAMANA INDEXING ============= //
 
-    printf("Calculating recall: ");
-    fflush(stdout);
-
-    float recall = 0.0;
-
-    int total_count = 0;
-    int count = 0;
-    int prediction_count = 0;
-    int ground_truth_count[querySet->num_queries];
-    
-    // Calculate the number of groundtruths for each query
-    for(int i = 0; i < querySet->num_queries; i++) {
-        ground_truth_count[i] = 0;
-        if(querySet->queries[i].v != 144){
-            for(int j = 0; j < 100; j++) {
-                if(groundTruthSet[i][j] != -1) {
-                    ground_truth_count[i]++;
-                }
-            }
-        }
-    }
-
-    int *V = NULL;
-    int V_size = 0;
-    int *K_CLOSEST = (int*)malloc(sizeof(int));
-    int k_closest_size = 0;
-    time_t start_recall_time = time(NULL);
-
-    for( int i = 0; i < querySet->num_queries; i++) {
-        int query_type = querySet->queries[i].query_type;
-        if(query_type == 0) {
-            // printf("Query %d of type %d\n", i, query_type);        
-            int sumOfAllClosest = 0;
-            int* arrayOfPredictedIndexes = (int*)malloc(sizeof(int));
-            for(int j = 0; j < stitchedGraphs_count; j++) {
-                int random_graph_index = rand() % stitchedGraphs[j].num_points;
-
-                greedy_search(&stitchedGraphs[j], querySet->queries[i].query_vector, random_graph_index, &V, &V_size, &K_CLOSEST, &k_closest_size, L);
-                
-                for( int k = 0; k < k_closest_size; k++) {
-                    add_to_dynamic_array(&arrayOfPredictedIndexes, &sumOfAllClosest, stitchedGraphs[j].points[K_CLOSEST[k]].index);
-                }
-                
-                V = NULL;
-                V_size = 0;
-                k_closest_size = 0;
-
-            }
-
-            // MUST INCLUDE THE DATASET
-            sort_array_based_on_dataset(dataSet, arrayOfPredictedIndexes, sumOfAllClosest, querySet->queries[i].query_vector);
-            for(int j = 0; j < k; j++) {
-                int predicted_index = arrayOfPredictedIndexes[j];
-                for(int l = 0; l < 100; l++) {
-                    if(groundTruthSet[i][l] == -1){
-                        break;
-                    }
-                    if(predicted_index == groundTruthSet[i][l]) {
-                        count++;
-                        break;
-                    }
-                }
-            }
-            // printf("Query %d: Found %d / %d\n", i, count, k);
-            prediction_count += k;
-            recall += count / k;
-            total_count += count;
-            count = 0;
-        
-        } else if(query_type == 1 && querySet->queries[i].v != 144) {
-            // printf("Query %d of type %d and filter %d\n", i, query_type, querySet->queries[i].v);
-
-            int query_filter = querySet->queries[i].v;
-            // printf("Filter_graph: %d with first index -> %d | filter %d\n", query_filter, stitchedGraphs[query_filter].points[0].index, stitchedGraphs[query_filter].points[0].category);
-            int random_graph_index = rand() % stitchedGraphs[query_filter].num_points;
-
-            greedy_search(&stitchedGraphs[query_filter], querySet->queries[i].query_vector, random_graph_index, &V, &V_size, &K_CLOSEST, &k_closest_size, L);
-            
-            int k_minimum = k;
-            if(k_closest_size < k) {
-                k_minimum = k_closest_size;
-            }
-            for(int k = 0; k < k_minimum; k++) {
-                int predicted_index = stitchedGraphs[query_filter].points[K_CLOSEST[k]].index;
-                for(int l = 0; l < 100; l++) {
-                    if(groundTruthSet[i][l] == -1){
-                        break;
-                    }
-                    if(predicted_index == groundTruthSet[i][l]) {
-                        count++;
-                        break;
-                    }
-                }                   
-            }
-            // printf("Query %d: Found %d / %d\n", i, count, k_minimum);
-            prediction_count += k_minimum;
-            recall += count / k_minimum;
-            total_count += count;
-            count = 0;
-            V = NULL;
-            V_size = 0;
-            k_closest_size = 0;
-        } 
-    }
-    printf("Done.\n");
-    fflush(stdout);
-    time_t end_recall_time = time(NULL);
-
-    free(K_CLOSEST);
-    free(V);
-    recall = (float) total_count / prediction_count;
-    printf("Found %d / %d\n", total_count, prediction_count);
-    printf("Recall: %.3f%%\n", recall*100);
+    calculateRecallStitched(dataSet, querySet, groundTruthSet, stitchedGraphs, stitchedGraphs_count, L, k, NUM_THREADS, resultFile);
 
     // ============== FREE MEMORY ================= //
-    
     
     free(dataSet->datapoints);
     free(dataSet);
     free(querySet->queries);
     free(querySet);
     free(groundTruthSet);
-    printf("Time taken to compute recall: %ld seconds\n", end_recall_time - start_recall_time);
     printf("Exiting the program..\n");
+    fprintf(resultFile,"---------------------------------------------\n");
+    fclose(resultFile);
 
     // Close the file
     // fclose(outputfd);
