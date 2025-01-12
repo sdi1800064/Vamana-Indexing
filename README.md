@@ -1,5 +1,5 @@
 ## Καραγιάννη Θωμάς sdi1800064@di.uoa.gr - 1115201800064
-## Μαβραΐδης Κωνσταντίνος sdi0700101@di.uoa.gr - 1115200700101
+## Μαυραΐδης Κωνσταντίνος sdi0700101@di.uoa.gr - 1115200700101
 
 # Execute
 
@@ -12,24 +12,38 @@ To install the check library run
 To create the test executable run
 ```make test```
 
-To create the Filter Vamana executable run
+To create the recall programm for Filter Vamana  run
 ``` make recallf ```
 
+To create the Filtered Vamana executable that creates the Filtered Vamana Graphs run
+```make createFilteredVamana```
+
 To create the Recall program for the Stitched Vamana run
-``` make recalls ```
+``` make recallst ```
 
 To create the Stitched Vamana executable that creates the Stitched Vamana Graphs run
 ``` make stitched ```
 
 ## Run
-### Recall
-In order to run the Recall program of Filter Vamana run
-#### ex:
-```./recallFilteredVamana -b testSets/dummy-data.bin -q testSets/dummy-queries.bin -g testSets/groundtruth.ivecs --graph filterGraph -R 30 -a```
 
-Similarly, to run the Recall program of Stitched Vamana run
+### create filtered Vamana
+In order to run the create for  Filtered Vamana sample command
+```./createFilteredVamana -b contest-data-release-1m.bin --graph filteredVamana1mParallel4ThreadsL120R60Testdsa -L 120 -a 1.2 -R 60 -t 3```
+
+### Recall
+In order to run the Recall program of Filter Vamana run(sample command)
 #### ex:
-```./recallStitchedVamana -b testSets/dummy-data.bin -q testSets/dummy-queries.bin -g testSets/groundtruth.ivecs --graph stitchedGraph -R 30 -a 1.3 -k 100 -L 200```
+```./recallFilteredVamana -b contest-data-release-1m.bin -q contest-queries-release-1m.bin --graph filteredVamana1mParallel4Threads -g neighbors1m.ivecs -R 60 -a 1.2 -L 120 -k 100 -t 4``
+
+
+### create stiched  Vamana
+In order to run the create for  Stiched Vamana sample command
+```./stitchedVamana -b contest-data-release-1m.bin -a 1.2 -R 60 -L 120 -t 4``
+
+
+Similarly, to run the Recall program of Stitched Vamana run sample command
+#### ex:
+```./recallStitchedVamana -b testSets/dummy-data.bin -q testSets/dummy-queries.bin -g testSets/groundtruth.ivecs --graph stitchedGraph -R 30 -a 1.3 -k 100 -L 200 -t 4```
 
 You need to use the following flags:
 
