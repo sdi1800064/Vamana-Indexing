@@ -28,6 +28,7 @@ int main(int argc, char *argv[]) {
     int L = -1;
     int R = -1;
     float a = -1.0;
+    int number_of_threads = -1;
 
     // Iterate through command line arguments
     for (int i = 1; i < argc; i++) {
@@ -57,6 +58,10 @@ int main(int argc, char *argv[]) {
         }
         else if (strcmp(argv[i], "-L") == 0 && i + 1 < argc) {
             L = atoi(argv[i + 1]);
+            i++;
+        }
+        else if (strcmp(argv[i], "-t") == 0 && i + 1 < argc) {
+            number_of_threads = atoi(argv[i + 1]);
             i++;
         }
     }
@@ -128,7 +133,7 @@ int main(int argc, char *argv[]) {
         filteredVamanaGraph = *readGraph(graph_file_name);
     } else {
         time_t start_vamana = time(NULL);
-        filteredVamanaGraph = filtered_vamana_indexing(dataSet, L,a,R,&(dataSet->filterInfo));
+        filteredVamanaGraph = filtered_vamana_indexing(dataSet, L,a,R,&(dataSet->filterInfo),number_of_threads);
         time_t end_vamana = time(NULL);
         double time_vamana = difftime(end_vamana, start_vamana);
         printf("Time to create Filtered graph: %.3f seconds\n", time_vamana);

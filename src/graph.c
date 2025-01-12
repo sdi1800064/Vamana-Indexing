@@ -903,8 +903,9 @@ void do_work(int L, float a, int R, Graph graph, int medoid_index, FilteredMetho
  * @param L The parameter controlling the size of the visited list in the greedy search.
  * @param a The pruning parameter that influences the robustness of pruning.
  * @param R The maximum number of neighbors allowed for a point after pruning.
+ * @param number_of_threads
  */
-Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filterInfo *filterinfo) {
+Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R, filterInfo *filterinfo, int number_of_threads) {
     printf("Starting Vamana Indexing\n");
 
     Graph graph = initialise_graph(dataset, R);
@@ -968,7 +969,7 @@ Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filte
     pthread_mutex_init(&pd.lock, NULL);
 
     // Create exactly 4 threads
-    const int NUM_THREADS = 4;
+    const int NUM_THREADS = 3;
     pthread_t threads[NUM_THREADS];
 
     // Launch them

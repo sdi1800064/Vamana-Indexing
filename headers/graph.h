@@ -60,7 +60,7 @@ FilteredMedoid * findClosestDataPoints(Point **groupedData, filterInfo *groupSiz
 void check_for_duplicates(int *array, int size);
 void generate_random_permutation(int *perm, int n);
 
-Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R,filterInfo *filterinfo);
+Graph filtered_vamana_indexing(DatasetInfo* dataset, int L, float a, int R, filterInfo *filterinfo, int number_of_threads);
 void *worker_thread(void *arg);
 
 #endif
