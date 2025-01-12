@@ -1,39 +1,25 @@
+#define _POSIX_C_SOURCE 199309L
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "headers/dataset.h"
-#include "headers/graph.h"
-
+#include <unistd.h>
 
 int main() {
-    const char *filename = "testSets/dummy-data.bin";
-    const char *queryfile = "testSets/dummy-queries.bin";
-    uint32_t total_vectors;
-    
-    DatasetInfo *dataset = read_dataset(filename);
-    // QueryInfo *queryDataSet = read_query_dataset(queryfile, &total_query_vectors);
-
-    if (!dataset) {
-        fprintf(stderr, "Failed to read the dataset.\n");
-        return EXIT_FAILURE;
+    char new_graph_file_name[100];
+    int R = 20;
+    int L = 200;
+    float a = 1.2;
+    int numOfPoints = 10001;
+    snprintf(new_graph_file_name, sizeof(new_graph_file_name), "%s_R%d_L%d_a%.2f_#%d.bin", 
+            "graphs/stitchedGraph", R, L, a, numOfPoints);
+    FILE* output;
+    output = fopen(new_graph_file_name, "w");
+    if (output == NULL) {
+        perror("Error opening output file");
+        exit(EXIT_FAILURE);
     }
+    printf("Found it!\n");
+    fclose(output);
 
-    sort_filter_array(&dataset->filterInfo);
-
-    // printf("Number of filters: %u\n", dataset->filterInfo.num_filters);
-    // for (int i = 0; i < dataset->filterInfo.num_filters; i++) {
-    //     printf("Filter %d: number of vectors: %d\n", dataset->filterInfo.filtersPoints[i].filter_index, dataset->filterInfo.filtersPoints[i].count );
-    //     for (int j = 0; j < dataset->filterInfo.filtersPoints[i].count; j++) {
-    //         printf("%d ", dataset->filterInfo.filtersPoints[i].point_indexes[j]);
-    //     }
-    //     printf("\n");
-    // }
-
-    // cprint_dataset(dataset, 4);
-    // cprint_query_dataset(queryDataSet, 4);
-
-    // print_dataset(dataset);
-
-    free_dataset(dataset);
-    return EXIT_SUCCESS;
+    return 0;
 }

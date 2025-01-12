@@ -6,21 +6,34 @@
 
 #include "../headers/dataset.h"
 #include "../headers/graph.h"
+#include "../headers/threadFunctions.h"
+#include "../headers/timeFunctions.h"
 
 int main(int argc, char *argv[]) {
 
     // Get the current time
     time_t t = time(NULL);
+    char *filename = "results.txt";
+
+    // Open/create the file
+    FILE *resultFile = fopen(filename, "a");
+    if (!resultFile) {
+        perror("Error opening file");
+        exit(1);
+    }
+    fseek(resultFile, 0, SEEK_END);
+    fprintf(resultFile,"---------------------------------------------\n");
+
+    fprintf(resultFile, "Starting indexing\n");
 
     // Seed the random number generator with the current time
     srand((unsigned int)t);
-    
-    printf("Starting...\n");
-    // Initialize variables
+        // Initialize variables
     char *base_file_name = NULL;
     int R = -1;
     float a = -1.0;
     int L = -1;
+    int numOfThreads = 0;
 
     // Iterate through command line arguments
     for (int i = 1; i < argc; i++) {
@@ -36,43 +49,52 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "-L") == 0 && i + 1 < argc) {
             L = atoi(argv[i + 1]);
             i++;
+        } else if (strcmp(argv[i], "-t") == 0 && i + 1 < argc) {
+            numOfThreads = atoi(argv[i + 1]);
+            i++;
         }
     }
 
     // Check if all required arguments are provided
-    if (!base_file_name || R == -1 || a == -1.0 || L == -1) {
+    if (!base_file_name || R == -1 || a == -1.0 || L == -1 || numOfThreads <= 0) {
         fprintf(stderr, "Error: Missing required arguments.\n");
-        fprintf(stderr, "Usage: %s -b base_file_name -R (int R) -a (float a) -L (int L)\n", argv[0]);
+        fprintf(stderr, "Usage: %s -b (base_file_name) -R (int R) -a (float a) -L (int L) -t (int numOfThreads)\n", argv[0]);
         return 1;
     }
 
-    printf("L = %d | a = %f | R = %d\n", L, a, R);
-
+    printf("\nbase_file = %s | L = %d | a = %f | R = %d | threads = %d\n", base_file_name, L, a, R, numOfThreads);
+    fprintf(resultFile,"\nbase_file = %s | L = %d | a = %f | R = %d | threads = %d\n", base_file_name, L, a, R, numOfThreads);
+    printf("---------------------------------------------\n");
 
     DatasetInfo* dataSet;
     dataSet = read_dataset(base_file_name);
+    printf("---------------------------------------------\n");
+
     int num_of_graphs = dataSet->filterInfo.num_filters;
-    printf("Number of graphs that will be created %d\n", num_of_graphs);
     int Rsmall = R/2;
     Graph* graph = (Graph *)malloc(num_of_graphs * sizeof(Graph));
 
-    time_t start_vamana = time(NULL);
-    graph = stitched_vamana_indexing(dataSet, L, a, Rsmall);
-    time_t end_vamana = time(NULL);
+    double startVamana = get_current_time();
 
-    double time_vamana = difftime(end_vamana, start_vamana);
-    
-    char* graph_file_name = "stitchedGraph";
-    char new_groundtruth_file_name[100];
-    sprintf(new_groundtruth_file_name, "%s%s%d%s", graph_file_name, "_R", R, ".bin");
+    graph = threadStitchedVamanaIndexing(dataSet, L, a, Rsmall, numOfThreads, resultFile);
+    printf("---------------------------------------------\n");
+    double time_vamana = get_elapsed_time(startVamana);
+
+    char graph_file_name[100]; // Ensure this is large enough
+    snprintf(graph_file_name, sizeof(graph_file_name), "%s_R%d_L%d_a%.2f_#%d.bin", 
+            "graphs/stitchedGraph", R, L, a, dataSet->num_vectors);
 
     writeGraphs(graph, num_of_graphs, graph_file_name);
+
     for(int i = 0; i < num_of_graphs; i++){
         free_graph(graph[i]);
     }
-    printf("Time taken to index all graphs %.2f seconds || Time taken for the whole program %.2f seconds\n", time_vamana, difftime(time(NULL), t));
+    printf("Time taken to index all graphs %.2f seconds\n", time_vamana);
+    fprintf(resultFile,"Time taken to index all graphs %.2f seconds\n", time_vamana);
+    fprintf(resultFile,"---------------------------------------------\n");
     free(graph);
     free_dataset(dataSet);
     printf("Exiting program\n");
+    fclose(resultFile);
     return 0;
 }
