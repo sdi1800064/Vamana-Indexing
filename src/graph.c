@@ -806,7 +806,7 @@ void do_work(int L, float a, int R, Graph graph, int medoid_index, FilteredMetho
     int V_size = 0;
 
     while(i < pointsPerFilter->num_points) {
-        printf("count i  %d\n", i);
+        //printf("count i  %d\n", i);
         s_index = pointsPerFilter->points[i];
         /**
              * Finds the medoid from the filtered medoids that is in the same category as the given datapoint.
@@ -1483,7 +1483,7 @@ FilteredMedoid* findClosestDataPoints(Point **groupedData, filterInfo *filterInf
     srand(time(NULL)); // Seed for random permutation
 
     for (int cat = 0; cat < numCategories; cat++) {
-        printf("i am in finding the category %d from a total %d with number of elements %d\n", cat,numCategories,filterInfo->filtersPoints[cat].count);
+        //printf("i am in finding the category %d from a total %d with number of elements %d\n", cat,numCategories,filterInfo->filtersPoints[cat].count);
         int groupSize = filterInfo->filtersPoints[cat].count;
         if (groupSize == 0) continue;
 
